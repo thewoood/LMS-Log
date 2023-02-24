@@ -5,16 +5,6 @@ from time import sleep
 import pickle
 import os
 from bs4 import BeautifulSoup
-
-
-
-# def isCookieSaved():
-#     file_path = 'cookies.pkl'
-#     if os.path.isfile(file_path):
-#         return True
-#     else:
-#         return False
-    
  
 def SaveCookie(username, password,):
     #1: Log in 
@@ -51,16 +41,13 @@ def SaveCookie(username, password,):
     session_requests.close()
     
 
-
 def Get_Activity(urls, css_selectors): 
-    messages = [dict()] 
+    messages = [] 
     session_requests = requests.session()
  
 	# Loading the cookies
     with open("cookies.pkl", "rb") as f:
         session_requests.cookies.update(utils.cookiejar_from_dict(pickle.load(f)))
-    
-    
         
     result = session_requests.get(
             urls[0], 
@@ -70,8 +57,6 @@ def Get_Activity(urls, css_selectors):
     result.apparent_encoding
     soup = BeautifulSoup(result.content, 'lxml')
         
-
-      
     for url in urls:
         result = session_requests.get(
             url, 
@@ -80,32 +65,30 @@ def Get_Activity(urls, css_selectors):
         
         #Getting the code of the page, Encoding cuz of Persian
         result.apparent_encoding
-        soup = BeautifulSoup(result.content, 'lxml')
+        soup = BeautifulSoup(result.content, 'html.parser') 
+       
+        msg_boxes = soup.select('.wall-action-item')
         
-        # Users
-        users = soup.select(css_selectors[0])
-        if users is not None:
-            print(f'users length: {len(users)}')
-            for user in users:
-                msg = {'user': user.text, 'text': '', 'attach': ''}
-                messages.append(msg)
-        
-        # Texts
-        texts = soup.select(css_selectors[1])
-        if texts is not None:
-            print(f'texts length: {len(texts)}')
-            for index, text in enumerate(texts):
-                messages[index]['text'] = text.text
-                
-        # Attach
-        attachs = soup.select(css_selectors[2])
-        if attachs is not None:
-            print(f'attachs length: {len(attachs)}')
-            for index, attach in enumerate(attachs):
-                messages[index]['attach'] = attach.text
-        
-    print(messages)
+        for msg_box in msg_boxes:
+            html = msg_box.prettify()
+            sub_soup = BeautifulSoup(html, 'html.parser')
+            user = sub_soup.select_one(css_selectors[0])
+            text = sub_soup.select_one(css_selectors[1])
+            attach = sub_soup.select_one(css_selectors[2]) 
+            if attach is None:
+                attach = ''
+            else:
+                attach = attach.text
 
+            msg = {'user': user.text.strip(),
+                'text': text.text.strip(),
+                'attach': attach.strip(),
+                }
+            
+            messages.append(msg)
+        for msg in messages:
+            print(msg)
+   
 def Print_Activity():
     # Save cookies in cookies.pkl
     SaveCookie('4014013109','1991174322')
@@ -127,10 +110,13 @@ if __name__ == '__main__':
     
 '''
 TODO
-1) Cookie Expiration
-2) csv file of all messages so far
+1) DONE
+Cookie Expiration
+2) save info in csv, load from csv, compare list with csv 
+    EACH CLASS HAS A DIFFERENT CSV FILE
 3) checking all classes instead of just mabani
-4) خب به این نتیجه رسیدیم که چون بعضی پیاما اتچمنت ندارن، سایز لیست اتچشمنت ها با
+4) DONE
+خب به این نتیجه رسیدیم که چون بعضی پیاما اتچمنت ندارن، سایز لیست اتچشمنت ها با
 سایز لیست یوزر ها یکی نمیشه و میترکه. پس چی کار میکنیم؟ هر بار یک بلاک کامل از پیام رو
 استخراج میکنیم و بعد توش کنکاش انجام میدیم. سی اس اس سلکتور هر بلاک پیام:
 .wall-action-item
