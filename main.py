@@ -5,6 +5,8 @@ from time import sleep
 import pickle
 import os
 from bs4 import BeautifulSoup
+import csv
+from github import Github
  
 def SaveCookie(username, password,):
     #1: Log in 
@@ -41,7 +43,7 @@ def SaveCookie(username, password,):
     session_requests.close()
     
 
-def Get_Activity(urls, css_selectors): 
+def Get_Messages(url): 
     messages = [] 
     session_requests = requests.session()
  
@@ -50,59 +52,156 @@ def Get_Activity(urls, css_selectors):
         session_requests.cookies.update(utils.cookiejar_from_dict(pickle.load(f)))
         
     result = session_requests.get(
-            urls[0], 
-            headers = dict(referer = urls[0]),
+            url, 
+            headers = dict(referer = url),
         )
     #Getting the code of the page, Encoding cuz of Persian
     result.apparent_encoding
     soup = BeautifulSoup(result.content, 'lxml')
         
-    for url in urls:
-        result = session_requests.get(
-            url, 
-            headers = dict(referer = url),
-        )
-        
-        #Getting the code of the page, Encoding cuz of Persian
-        result.apparent_encoding
-        soup = BeautifulSoup(result.content, 'html.parser') 
-       
-        msg_boxes = soup.select('.wall-action-item')
-        
-        for msg_box in msg_boxes:
-            html = msg_box.prettify()
-            sub_soup = BeautifulSoup(html, 'html.parser')
-            user = sub_soup.select_one(css_selectors[0])
-            text = sub_soup.select_one(css_selectors[1])
-            attach = sub_soup.select_one(css_selectors[2]) 
-            if attach is None:
-                attach = ''
-            else:
-                attach = attach.text
+    
+    result = session_requests.get(
+        url, 
+        headers = dict(referer = url),
+    )
+    
+    #Getting the code of the page, Encoding cuz of Persian
+    result.apparent_encoding
+    soup = BeautifulSoup(result.content, 'html.parser') 
+    
+    msg_boxes = soup.select('.wall-action-item')
+    
+    css_selectors= ['.feed_item_username',
+                '.feed_item_bodytext',
+                '.feed_item_attachments']
+    for msg_box in msg_boxes:
+        html = msg_box.prettify()
+        sub_soup = BeautifulSoup(html, 'html.parser')
+        user = sub_soup.select_one(css_selectors[0])
+        text = sub_soup.select_one(css_selectors[1])
+        attach = sub_soup.select_one(css_selectors[2]) 
+        if attach is None:
+            attach = ''
+        else:
+            attach = attach.text
 
-            msg = {'user': user.text.strip(),
-                'text': text.text.strip(),
-                'attach': attach.strip(),
-                }
-            
-            messages.append(msg)
-        for msg in messages:
-            print(msg)
-   
-def Print_Activity():
+        msg = {'User': user.text.strip().replace('\n\n', ''),
+            'Text': text.text.strip().replace('\n\n', ''),
+            'Attach': attach.strip().replace('\n\n', ''),
+            }
+        
+        messages.append(msg)
+    
+    
+    return messages      
+
+# Gets a url and sends it to social media 
+def Whats_New(url):
+    filename = f"{url.split('/')[-1]}.csv"
+    new_data = Get_Messages(url)
+    previous_data = Load_CSV(filename=filename)
+    Send_In_Social_Media(new_data,previous_data)
+    Save_CSV(new_data, filename)
+    # Upload to github
+    token = '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'
+    Upload_Github('thewoood', token, filename)
+
+    
+def Send_In_Social_Media(new_data, previous_data):
+    differences = [data for data in new_data if data not in previous_data]
+    # for data in new_data:
+    #     if data not in previous_data:
+    #         differences.append(data)
+    if differences:
+        for difference in differences:
+            difference = prettify_msg(difference)
+            print(difference)
+            Send_Telegram(difference, '-1001694255282')
+    else:
+        print('No Update!')
+
+def Send_Telegram(msg, chat_id):
+    url = 'https://lms-log.davwvod.workers.dev/'
+    # payload = {'chat_id': '-1001694255282', 'message_text': 'Your message goes here'}
+    payload = {'message_text': msg, 'chat_id': chat_id}
+    response = requests.post(url, json=payload)
+    print(response.text)
+
+def prettify_msg(msg):
+    return f"{msg['User']}:\n{msg['Text']}\n{msg['Attach']}"
+
+def Save_CSV(data, filename):
+
+    # Writing data to CSV file
+    with open(filename, mode='w', newline='', encoding='utf-8') as csv_file:
+        fieldnames = ['User', 'Text', 'Attach']
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+
+        # Write the header row
+        writer.writeheader()
+
+        # Write the data rows
+        for row in data:
+            writer.writerow(row)
+
+    print(f'{len(data)} rows written to {filename} successfully!')
+
+def Load_CSV(filename):
+    
+    if not os.path.isfile(filename):
+        # Create an empty file if it doesn't exist
+        with open(filename, mode='w', newline='', encoding='utf-8') as csv_file:
+            pass  # empty code block
+
+    # Reading data from CSV file and storing it in a list of dictionaries
+    data = []
+    with open(filename, mode='r', encoding='utf-8') as csv_file:
+        reader = csv.DictReader(csv_file)
+        for row in reader:
+            data.append(row)
+
+    print(f'{len(data)} rows loaded from {filename} successfully!')
+    return data
+
+def Upload_Github(username, password, filename):
+
+    # Repository details
+    repository_name = 'lms-cloud'
+
+    # File details
+    file_path = filename
+    file_name = os.path.basename(file_path)
+    file_content = open(file_path, 'rb').read()
+
+    # Authenticate with GitHub
+    g = Github(username, password)
+
+    # Get the repository
+    repo = g.get_user().get_repo(repository_name)
+
+    # Check if the file exists
+    try:
+        file = repo.get_contents(file_name)
+        # Update the existing file
+        repo.update_file(file.path, 'Updated!', file_content, file.sha)
+        print(f'File "{file_name}" updated successfully.')
+    except:
+        # Create a new file
+        repo.create_file(file_name, 'Created!', file_content)
+        print(f'File "{file_name}" created and uploaded successfully.')
+
+
+def main():
     # Save cookies in cookies.pkl
     SaveCookie('4014013109','1991174322')
         
-    url = ['http://lms.ui.ac.ir/group/84632']
+    urls = ['http://lms.ui.ac.ir/group/84632',
+           'http://lms.ui.ac.ir/group/84738',
+           'http://lms.ui.ac.ir/group/84675',
+           'http://lms.ui.ac.ir/group/84643']
+    for url in urls:
+        Whats_New(url)
 
-    css_selectors= ['.feed_item_username',
-                    '.feed_item_bodytext',
-                    '.feed_item_attachments']
-    Get_Activity(urls=url, css_selectors=css_selectors)
- 
-    
-def main():
-    Print_Activity()
     
     
 if __name__ == '__main__':
@@ -112,13 +211,21 @@ if __name__ == '__main__':
 TODO
 1) DONE
 Cookie Expiration
-2) save info in csv, load from csv, compare list with csv 
+2) DONE
+    save info in csv, load from csv, compare list with csv 
     EACH CLASS HAS A DIFFERENT CSV FILE
-3) checking all classes instead of just mabani
+3) DONE
+    checking all classes instead of just mabani
 4) DONE
 خب به این نتیجه رسیدیم که چون بعضی پیاما اتچمنت ندارن، سایز لیست اتچشمنت ها با
 سایز لیست یوزر ها یکی نمیشه و میترکه. پس چی کار میکنیم؟ هر بار یک بلاک کامل از پیام رو
 استخراج میکنیم و بعد توش کنکاش انجام میدیم. سی اس اس سلکتور هر بلاک پیام:
 .wall-action-item
 میشه با chat gpt فهمید که چطوری به کلاس های توی این بلاک نفوذ کرد
+5) DONE
+    save files in a private github repo
+6) is it possible to send message in telegram using Liara? 
+    Answer: FUCK NO!
+7) Save date and time of message
+8) Send the link of attachment
 '''
