@@ -7,6 +7,7 @@ import os
 from bs4 import BeautifulSoup
 import csv
 from github import Github
+import io
  
 def SaveCookie(username, password,):
     #1: Log in 
@@ -51,13 +52,13 @@ def Get_Messages(url):
     with open("cookies.pkl", "rb") as f:
         session_requests.cookies.update(utils.cookiejar_from_dict(pickle.load(f)))
         
-    result = session_requests.get(
-            url, 
-            headers = dict(referer = url),
-        )
-    #Getting the code of the page, Encoding cuz of Persian
-    result.apparent_encoding
-    soup = BeautifulSoup(result.content, 'lxml')
+    # result = session_requests.get(
+    #         url, 
+    #         headers = dict(referer = url),
+    #     )
+    # #Getting the code of the page, Encoding cuz of Persian
+    # result.apparent_encoding
+    # soup = BeautifulSoup(result.content, 'lxml')
         
     
     result = session_requests.get(
@@ -99,12 +100,12 @@ def Get_Messages(url):
 def Whats_New(url):
     filename = f"{url.split('/')[-1]}.csv"
     new_data = Get_Messages(url)
-    previous_data = Load_CSV(filename=filename)
-    Send_In_Social_Media(new_data,previous_data)
-    Save_CSV(new_data, filename)
-    # Upload to github
     token = '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'
-    Upload_Github('thewoood', token, filename)
+    previous_data = Load_CSV(filename=filename, token=token)
+    # Send_In_Social_Media(new_data,previous_data)
+    # Save_CSV(new_data, filename)
+    # Upload to github
+    Upload_Github('thewoood', token,filename, new_data)
 
     
 def Send_In_Social_Media(new_data, previous_data):
@@ -146,32 +147,66 @@ def Save_CSV(data, filename):
 
     print(f'{len(data)} rows written to {filename} successfully!')
 
-def Load_CSV(filename):
+def Load_CSV(filename, token):
+    from io import StringIO
+
+    # Personal access token
+
+    # GitHub repository URL
+    url = f'https://raw.githubusercontent.com/thewoood/lms-cloud/main/{filename}'
+
+    # HTTP headers
+    headers = {'Authorization': f'token {token}'}
+
+    # Make the HTTP request
+    response = requests.get(url, headers=headers)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Convert the response content to a string buffer
+        content = response.content.decode('utf-8')
+        buffer = StringIO(content)
+
+        # Read the CSV file from the string buffer
+        reader = csv.DictReader(buffer)
+        data = list(reader)
+
+        # Print the data
+        print(f'{len(data)} rows loaded from {filename} successfully!')
+        return data
+    else:
+        print('Failed to read the CSV file.')
+
     
-    if not os.path.isfile(filename):
-        # Create an empty file if it doesn't exist
-        with open(filename, mode='w', newline='', encoding='utf-8') as csv_file:
-            pass  # empty code block
+    
+    # if not os.path.isfile(filename):
+    #     # Create an empty file if it doesn't exist
+    #     with open(filename, mode='w', newline='', encoding='utf-8') as csv_file:
+    #         pass  # empty code block
 
     # Reading data from CSV file and storing it in a list of dictionaries
-    data = []
-    with open(filename, mode='r', encoding='utf-8') as csv_file:
-        reader = csv.DictReader(csv_file)
-        for row in reader:
-            data.append(row)
+    # data = []
+    # with open(filename, mode='r', encoding='utf-8') as csv_file:
+    #     reader = csv.DictReader(csv_file)
+    #     for row in reader:
+    #         data.append(row)
 
-    print(f'{len(data)} rows loaded from {filename} successfully!')
-    return data
+    # print(f'{len(data)} rows loaded from {filename} successfully!')
+    # return data
 
-def Upload_Github(username, password, filename):
+def Upload_Github(username, password, file_name, new_data):
 
     # Repository details
     repository_name = 'lms-cloud'
 
     # File details
-    file_path = filename
-    file_name = os.path.basename(file_path)
-    file_content = open(file_path, 'rb').read()
+    csv_data = io.StringIO()
+    csv_writer = csv.DictWriter(csv_data, fieldnames=['User', 'Text', 'Attach'])
+    csv_writer.writeheader()
+    csv_writer.writerows(new_data)
+
+# Read CSV file content
+    file_content = csv_data.getvalue()
 
     # Authenticate with GitHub
     g = Github(username, password)
@@ -185,7 +220,7 @@ def Upload_Github(username, password, filename):
         # Update the existing file
         repo.update_file(file.path, 'Updated!', file_content, file.sha)
         print(f'File "{file_name}" updated successfully.')
-    except:
+    except :
         # Create a new file
         repo.create_file(file_name, 'Created!', file_content)
         print(f'File "{file_name}" created and uploaded successfully.')
@@ -226,6 +261,15 @@ Cookie Expiration
     save files in a private github repo
 6) is it possible to send message in telegram using Liara? 
     Answer: FUCK NO!
-7) Save date and time of message
+    
+    
+7) Save date and time of message: .timestamp
 8) Send the link of attachment
+9) DONE!
+    Load data from github
+10) Load cookies from github
+11) Save cookies to github
+12) Restructure the code
+    use black.py to pretiffy it
+13) since we read csv from github, the returned value is not string and can't be updated
 '''
