@@ -1,4 +1,3 @@
-from lxml import html
 import requests
 from requests import utils
 from time import sleep
@@ -8,14 +7,15 @@ from bs4 import BeautifulSoup
 import csv
 from github import Github
 import io
+from io import StringIO
+
  
-def SaveCookie(username, password,):
+def SaveCookie(username, password, login_url, gituser, gittoken, repository_name, cookiename):
     #1: Log in 
     #2: Save Cookies in Cookies.pkl
     
     session_requests=requests.session()
     
-    login_url = "http://lms.ui.ac.ir/login"
     result = session_requests.get(login_url) #Loading Login Url
 
 	#Setting Up Login Info
@@ -34,33 +34,47 @@ def SaveCookie(username, password,):
  
 	# Status Code
     print(result.status_code)
-    with open('page.html', 'w', encoding='utf-8') as page:
-        page.write(result.text)
- 
     
-    with open("cookies.pkl", "wb") as f:
-        pickle.dump(utils.dict_from_cookiejar(session_requests.cookies), f)
+    cookies = utils.dict_from_cookiejar(session_requests.cookies)
+    Save_Cookies_To_Github(gituser, gittoken, repository_name, cookiename, cookies)
+    
+    # with open("cookies.pkl", "wb") as f:
+    #     pickle.dump(utils.dict_from_cookiejar(session_requests.cookies), f)
         
     session_requests.close()
     
+def Save_Cookies_To_Github(username, token, repository_name, file_name, cookies):
+    # Read CSV file content
+    file_content = cookies
 
-def Get_Messages(url): 
+    # Authenticate with GitHub
+    g = Github(username, token)
+
+    # Get the repository
+    repo = g.get_user().get_repo(repository_name)
+
+    # Check if the file exists
+    try:
+        file = repo.get_contents(file_name)
+        # Update the existing file
+        repo.update_file(file.path, 'Updated!', file_content, file.sha)
+        print('cookies updated!')
+    except :
+        # Create a new file
+        repo.create_file(file_name, 'Created!', file_content)
+        print('cookies created.')
+
+def Load_Cookies_From_Github():
+    pass
+
+def Get_Messages(url, css_selectors, csv_headers): 
     messages = [] 
     session_requests = requests.session()
  
 	# Loading the cookies
     with open("cookies.pkl", "rb") as f:
         session_requests.cookies.update(utils.cookiejar_from_dict(pickle.load(f)))
-        
-    # result = session_requests.get(
-    #         url, 
-    #         headers = dict(referer = url),
-    #     )
-    # #Getting the code of the page, Encoding cuz of Persian
-    # result.apparent_encoding
-    # soup = BeautifulSoup(result.content, 'lxml')
-        
-    
+
     result = session_requests.get(
         url, 
         headers = dict(referer = url),
@@ -72,88 +86,64 @@ def Get_Messages(url):
     
     msg_boxes = soup.select('.wall-action-item')
     
-    css_selectors= ['.feed_item_username',
-                '.feed_item_bodytext',
-                '.feed_item_attachments']
     for msg_box in msg_boxes:
         html = msg_box.prettify()
         sub_soup = BeautifulSoup(html, 'html.parser')
         user = sub_soup.select_one(css_selectors[0])
         text = sub_soup.select_one(css_selectors[1])
         attach = sub_soup.select_one(css_selectors[2]) 
+        feed_item_date = sub_soup.find('div', class_='feed_item_date')
+        # find the "timestamp" span element within the "feed_item_date" div
+        timestamp_span = feed_item_date.find('span', class_='timestamp')
+        # extract the time as a string
+        time_str = timestamp_span['title']
         if attach is None:
             attach = ''
         else:
             attach = attach.text
 
-        msg = {'User': user.text.strip().replace('\n\n', ''),
-            'Text': text.text.strip().replace('\n\n', ''),
-            'Attach': attach.strip().replace('\n\n', ''),
+        msg = {csv_headers[0]: user.text.strip().replace('\n\n', ''),
+            csv_headers[1]: text.text.strip().replace('\n\n', ''),
+            csv_headers[2]: attach.strip().replace('\n\n', ''),
+            csv_headers[3]: time_str.strip().replace('\n\n', '')
             }
         
         messages.append(msg)
     
-    
+    print(f'{len(messages)} rows read from lms!')
     return messages      
 
 # Gets a url and sends it to social media 
-def Whats_New(url):
+def Whats_New(url, username, token, css_selectors, csv_headers, telegram_chat_id, cloud_flare_url, repo_main_url):
     filename = f"{url.split('/')[-1]}.csv"
-    new_data = Get_Messages(url)
-    token = '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'
-    previous_data = Load_CSV(filename=filename, token=token)
-    # Send_In_Social_Media(new_data,previous_data)
-    # Save_CSV(new_data, filename)
-    # Upload to github
-    Upload_Github('thewoood', token,filename, new_data)
-
-    
-def Send_In_Social_Media(new_data, previous_data):
+    new_data = Get_Messages(url, css_selectors, csv_headers)
+    previous_data = Load_CSV(filename, repo_main_url, token)
     differences = [data for data in new_data if data not in previous_data]
-    # for data in new_data:
-    #     if data not in previous_data:
-    #         differences.append(data)
-    if differences:
-        for difference in differences:
-            difference = prettify_msg(difference)
-            print(difference)
-            Send_Telegram(difference, '-1001694255282')
-    else:
-        print('No Update!')
+    repo_name = repo_main_url.split('/')[-3]
+    # Send_In_Social_Media(new_data,previous_data, csv_headers, telegram_chat_id, cloud_flare_url)
+    Save_CSV(new_data, filename, csv_headers, username, token, repo_name, len(differences))
+   
+def Send_In_Social_Media(differences, csv_headers, telegram_chat_id, cloud_flare_url):
+    for difference in differences:
+        difference = prettify_msg(difference, csv_headers)
+        print(difference)
+        Send_Telegram(cloud_flare_url, difference, telegram_chat_id)
 
-def Send_Telegram(msg, chat_id):
-    url = 'https://lms-log.davwvod.workers.dev/'
-    # payload = {'chat_id': '-1001694255282', 'message_text': 'Your message goes here'}
+
+def Send_Telegram(cloud_flare_url, msg, chat_id):
     payload = {'message_text': msg, 'chat_id': chat_id}
-    response = requests.post(url, json=payload)
-    print(response.text)
+    response = requests.post(cloud_flare_url, json=payload)
+    print(f'Telgram Response: {response.text}')
 
-def prettify_msg(msg):
-    return f"{msg['User']}:\n{msg['Text']}\n{msg['Attach']}"
+def prettify_msg(msg, csv_headers):
+    return f"{msg[csv_headers[0]]}:\n{msg[csv_headers[1]]}\n{msg[csv_headers[2]]}\n{msg[csv_headers[3]]}"
 
-def Save_CSV(data, filename):
-
-    # Writing data to CSV file
-    with open(filename, mode='w', newline='', encoding='utf-8') as csv_file:
-        fieldnames = ['User', 'Text', 'Attach']
-        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-
-        # Write the header row
-        writer.writeheader()
-
-        # Write the data rows
-        for row in data:
-            writer.writerow(row)
-
-    print(f'{len(data)} rows written to {filename} successfully!')
-
-def Load_CSV(filename, token):
-    from io import StringIO
-
-    # Personal access token
-
+def Save_CSV(data, filename, csv_hearders, username, token, repository_name, len_new_data):
+    Upload_CSV_Github(username,token, filename, data, csv_hearders, repository_name, len_new_data)
+    
+def Load_CSV(filename, repo_main_url, token, ):
     # GitHub repository URL
-    url = f'https://raw.githubusercontent.com/thewoood/lms-cloud/main/{filename}'
+    url = repo_main_url+filename
 
     # HTTP headers
     headers = {'Authorization': f'token {token}'}
@@ -177,65 +167,58 @@ def Load_CSV(filename, token):
     else:
         print('Failed to read the CSV file.')
 
-    
-    
-    # if not os.path.isfile(filename):
-    #     # Create an empty file if it doesn't exist
-    #     with open(filename, mode='w', newline='', encoding='utf-8') as csv_file:
-    #         pass  # empty code block
+def Upload_CSV_Github(username, token, file_name, new_data, csv_headers, repository_name, len_new_data):
+    if len_new_data !=0:
+        # File details
+        csv_data = io.StringIO()
+        csv_writer = csv.DictWriter(csv_data, fieldnames=csv_headers)
+        csv_writer.writeheader()
+        csv_writer.writerows(new_data)
 
-    # Reading data from CSV file and storing it in a list of dictionaries
-    # data = []
-    # with open(filename, mode='r', encoding='utf-8') as csv_file:
-    #     reader = csv.DictReader(csv_file)
-    #     for row in reader:
-    #         data.append(row)
+        # Read CSV file content
+        file_content = csv_data.getvalue()
 
-    # print(f'{len(data)} rows loaded from {filename} successfully!')
-    # return data
+        # Authenticate with GitHub
+        g = Github(username, token)
 
-def Upload_Github(username, password, file_name, new_data):
+        # Get the repository
+        repo = g.get_user().get_repo(repository_name)
 
-    # Repository details
-    repository_name = 'lms-cloud'
-
-    # File details
-    csv_data = io.StringIO()
-    csv_writer = csv.DictWriter(csv_data, fieldnames=['User', 'Text', 'Attach'])
-    csv_writer.writeheader()
-    csv_writer.writerows(new_data)
-
-# Read CSV file content
-    file_content = csv_data.getvalue()
-
-    # Authenticate with GitHub
-    g = Github(username, password)
-
-    # Get the repository
-    repo = g.get_user().get_repo(repository_name)
-
-    # Check if the file exists
-    try:
-        file = repo.get_contents(file_name)
-        # Update the existing file
-        repo.update_file(file.path, 'Updated!', file_content, file.sha)
-        print(f'File "{file_name}" updated successfully.')
-    except :
-        # Create a new file
-        repo.create_file(file_name, 'Created!', file_content)
-        print(f'File "{file_name}" created and uploaded successfully.')
+        # Check if the file exists
+        try:
+            file = repo.get_contents(file_name)
+            # Update the existing file
+            repo.update_file(file.path, 'Updated!', file_content, file.sha)
+            print(f'{len_new_data} new messages added!')
+        except :
+            # Create a new file
+            repo.create_file(file_name, 'Created!', file_content)
+            print(f'File "{file_name}" created and uploaded successfully. {len_new_data} new messages added!')
+    else:
+        print('0 new messages!')
 
 
 def main():
     # Save cookies in cookies.pkl
-    SaveCookie('4014013109','1991174322')
+    username = 'thewoood'
+    token = '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'
+    SaveCookie('4014013109','1991174322', "http://lms.ui.ac.ir/login", username, token, 'lms-cloud', 'cookies.pkl')
         
     urls = ['http://lms.ui.ac.ir/group/84632',
            'http://lms.ui.ac.ir/group/84738',
            'http://lms.ui.ac.ir/group/84675',
            'http://lms.ui.ac.ir/group/84643']
+    csv_headers = ['User', 'Text', 'Attach', 'Date']
+    css_selectors= ['.feed_item_username',
+                '.feed_item_bodytext',
+                '.feed_item_attachments',
+                '.timestamp',
+                ]
+    telegram_chat_id = '-1001694255282'
+    cloud_flare_url = 'https://lms-log.davwvod.workers.dev/'
+    repo_main_url = 'https://raw.githubusercontent.com/thewoood/lms-cloud/main/'
     for url in urls:
-        Whats_New(url)
+        Whats_New(url, username, token, css_selectors, csv_headers, telegram_chat_id, cloud_flare_url, repo_main_url)
 
     
     
@@ -263,7 +246,8 @@ Cookie Expiration
     Answer: FUCK NO!
     
     
-7) Save date and time of message: .timestamp
+7) DONE
+    Save date and time of message: .timestamp
 8) Send the link of attachment
 9) DONE!
     Load data from github
@@ -271,5 +255,8 @@ Cookie Expiration
 11) Save cookies to github
 12) Restructure the code
     use black.py to pretiffy it
-13) since we read csv from github, the returned value is not string and can't be updated
+13) DONE
+    since we read csv from github, the returned value is not string and can't be updated
+15) DONE
+    a function to get previous and new, and return what's different 
 '''
