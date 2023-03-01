@@ -45,7 +45,7 @@ def SaveCookie(username, password, login_url, gituser, gittoken, repository_name
     
 def Save_Cookies_To_Github(username, token, repository_name, file_name, cookies):
     # Read CSV file content
-    file_content = cookies
+    file_content = pickle.dumps(cookies)
 
     # Authenticate with GitHub
     g = Github(username, token)
@@ -64,16 +64,38 @@ def Save_Cookies_To_Github(username, token, repository_name, file_name, cookies)
         repo.create_file(file_name, 'Created!', file_content)
         print('cookies created.')
 
-def Load_Cookies_From_Github():
-    pass
+def Load_Cookies_From_Github(repo_main_url, filename, token):
+    # GitHub repository URL
+    url = repo_main_url+filename
 
-def Get_Messages(url, css_selectors, csv_headers): 
+    # HTTP headers
+    headers = {'Authorization': f'token {token}'}
+
+    # Make the HTTP request
+    response = requests.get(url, headers=headers)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Convert the response content to a string buffer
+        content = io.BytesIO(response.content)
+        # buffer = StringIO(content)
+
+        # Loading the cookies
+        
+        cookies = pickle.load(content)
+        return cookies
+
+    else:
+        print('Failed to read the Cookies file.')
+
+def Get_Messages(url, css_selectors, csv_headers,): 
     messages = [] 
     session_requests = requests.session()
  
 	# Loading the cookies
-    with open("cookies.pkl", "rb") as f:
-        session_requests.cookies.update(utils.cookiejar_from_dict(pickle.load(f)))
+    token = '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'
+    c = Load_Cookies_From_Github('https://raw.githubusercontent.com/thewoood/lms-cloud/main/', 'cookies.pkl', token)
+    session_requests.cookies.update(utils.cookiejar_from_dict(c))
 
     result = session_requests.get(
         url, 
