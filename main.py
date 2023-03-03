@@ -2,13 +2,13 @@ import requests
 from requests import utils
 from time import sleep
 import pickle
-import os
 from bs4 import BeautifulSoup
 import csv
 from github import Github
 import io
 from io import StringIO
-
+import socket
+import urllib3
  
 def SaveCookie(username, password, login_url, gituser, gittoken, repository_name, cookiename):
     #1: Log in 
@@ -88,13 +88,12 @@ def Load_Cookies_From_Github(repo_main_url, filename, token):
     else:
         print('Failed to read the Cookies file.')
 
-def Get_Messages(url, css_selectors, csv_headers,): 
+def Get_Messages(url, css_selectors, csv_headers, token, repo_main_url): 
     messages = [] 
     session_requests = requests.session()
  
 	# Loading the cookies
-    token = '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'
-    c = Load_Cookies_From_Github('https://raw.githubusercontent.com/thewoood/lms-cloud/main/', 'cookies.pkl', token)
+    c = Load_Cookies_From_Github(repo_main_url, 'cookies.pkl', token)
     session_requests.cookies.update(utils.cookiejar_from_dict(c))
 
     result = session_requests.get(
@@ -136,26 +135,45 @@ def Get_Messages(url, css_selectors, csv_headers,):
     return messages      
 
 # Gets a url and sends it to social media 
-def Whats_New(url, username, token, css_selectors, csv_headers, telegram_chat_id, cloud_flare_url, repo_main_url):
+def Whats_New(url, username, token, css_selectors, csv_headers, repo_main_url, repository_name):
     filename = f"{url.split('/')[-1]}.csv"
-    new_data = Get_Messages(url, css_selectors, csv_headers)
+    new_data = Get_Messages(url, css_selectors, csv_headers, token, repo_main_url)
     previous_data = Load_CSV(filename, repo_main_url, token)
     differences = [data for data in new_data if data not in previous_data]
     repo_name = repo_main_url.split('/')[-3]
-    # Send_In_Social_Media(new_data,previous_data, csv_headers, telegram_chat_id, cloud_flare_url)
+    Send_Diff_In_Github(differences, csv_headers, username, token, repository_name, 'messageholder.csv')
     Save_CSV(new_data, filename, csv_headers, username, token, repo_name, len(differences))
    
-def Send_In_Social_Media(differences, csv_headers, telegram_chat_id, cloud_flare_url):
-    for difference in differences:
-        difference = prettify_msg(difference, csv_headers)
-        print(difference)
-        Send_Telegram(cloud_flare_url, difference, telegram_chat_id)
+def Send_Diff_In_Github(differences, csv_headers, username, token, repository_name, file_name):
+    len_new_data = len(differences)
+    if len_new_data != 0:
+        # File details
+        csv_data = io.StringIO()
+        csv_writer = csv.DictWriter(csv_data, fieldnames=csv_headers)
+        csv_writer.writeheader()
+        csv_writer.writerows(differences)
 
+        # Read CSV file content
+        file_content = csv_data.getvalue()
 
-def Send_Telegram(cloud_flare_url, msg, chat_id):
-    payload = {'message_text': msg, 'chat_id': chat_id}
-    response = requests.post(cloud_flare_url, json=payload)
-    print(f'Telgram Response: {response.text}')
+        # Authenticate with GitHub
+        g = Github(username, token)
+
+        # Get the repository
+        repo = g.get_user().get_repo(repository_name)
+
+        # Check if the file exists
+        try:
+            file = repo.get_contents(file_name)
+            # Update the existing file
+            repo.update_file(file.path, 'Updated!', file_content, file.sha)
+            print(f'{len_new_data} added to github message holder!')
+        except :
+            # Create a new file
+            repo.create_file(file_name, 'Created!', file_content)
+            print(f'File "{file_name}" created and uploaded successfully. {len_new_data} added to github message holder!')
+    else:
+        print('0 new messages. No update to Github!')
 
 def prettify_msg(msg, csv_headers):
     return f"{msg[csv_headers[0]]}:\n{msg[csv_headers[1]]}\n{msg[csv_headers[2]]}\n{msg[csv_headers[3]]}"
@@ -236,18 +254,21 @@ def main():
                 '.feed_item_attachments',
                 '.timestamp',
                 ]
-    telegram_chat_id = '-1001694255282'
-    cloud_flare_url = 'https://lms-log.davwvod.workers.dev/'
+    # telegram_chat_id = '-1001694255282'
+    # cloud_flare_url = 'https://lms-log.davwvod.workers.dev/'
     repo_main_url = 'https://raw.githubusercontent.com/thewoood/lms-cloud/main/'
     for url in urls:
-        Whats_New(url, username, token, css_selectors, csv_headers, telegram_chat_id, cloud_flare_url, repo_main_url)
+        Whats_New(url, username, token, css_selectors, csv_headers, repo_main_url, 'lms-cloud')
 
     
-    
 if __name__ == '__main__':
-    main()
+    while True:
+        main()
+        print('Wating for 900 seconds')
+        sleep(1800)
     
 '''
+i want to send a post requests to 'https://lms-log.davwvod.workers.dev' using this DNS-over-HTTPS: https://free.shecan.ir/dns-query
 TODO
 1) DONE
 Cookie Expiration
