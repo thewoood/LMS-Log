@@ -141,16 +141,22 @@ def Whats_New(url, username, token, css_selectors, csv_headers, repo_main_url, r
     previous_data = Load_CSV(filename, repo_main_url, token)
     differences = [data for data in new_data if data not in previous_data]
     repo_name = repo_main_url.split('/')[-3]
-    Send_Diff_In_Github(differences, csv_headers, username, token, repository_name, 'messageholder.csv')
+    Send_Diff_In_Github(differences, csv_headers, username, token, repository_name, 'messageholder.csv', repo_main_url)
     Save_CSV(new_data, filename, csv_headers, username, token, repo_name, len(differences))
-   
-def Send_Diff_In_Github(differences, csv_headers, username, token, repository_name, file_name):
+  
+def Get_Message_Holder(repo_main_url, token):
+    message_holder = Load_CSV('messageholder.csv', repo_main_url, token)
+    return message_holder
+    
+def Send_Diff_In_Github(differences, csv_headers, username, token, repository_name, file_name, repo_main_url):
+    previous_message_holder = Get_Message_Holder(repo_main_url, token)
     len_new_data = len(differences)
     if len_new_data != 0:
         # File details
         csv_data = io.StringIO()
         csv_writer = csv.DictWriter(csv_data, fieldnames=csv_headers)
         csv_writer.writeheader()
+        csv_writer.writerows(previous_message_holder)
         csv_writer.writerows(differences)
 
         # Read CSV file content
