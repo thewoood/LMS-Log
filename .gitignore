@@ -8,3 +8,4 @@ test.json
 env.py
 .liaraignore
 .vscode
+Dockerfile
