@@ -1,3 +1,4 @@
+Dockerfile
 .venv
 page.html
 test.py
@@ -5,4 +6,6 @@ liara-cloudflare-telegram
 test-liara-git-repl.py
 TODO
 test.json
-env.py 
+env.py
+.liaraignore
+.vscode

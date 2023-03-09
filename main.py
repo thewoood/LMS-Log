@@ -8,7 +8,7 @@ from github import Github
 import io
 from io import StringIO
 import os
-from env import Set_Environ 
+# from env import Set_Environ 
 
 
 def SaveCookie(username, password, login_url, gituser, gittoken, repository_name, cookiename):
@@ -263,8 +263,7 @@ def Upload_CSV_Github(username, token, file_name, new_data, csv_headers, reposit
 
 def main():
     # Save cookies in cookies.pkl
-    #another comment
-    Set_Environ()
+    #Set_Environ()
     username = os.getenv('GITHUB_USERNAME')
     token = os.getenv('GITHUB_TOKEN')
     repo_name = os.getenv('GITHUB_REPO_NAME')
