@@ -8,7 +8,7 @@ from github import Github
 import io
 from io import StringIO
 import os
-from env import Set_Environ 
+# from env import Set_Environ 
 
 
 def SaveCookie(username, password, login_url, gituser, gittoken, repository_name, cookiename):
