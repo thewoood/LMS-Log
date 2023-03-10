@@ -9,6 +9,8 @@ import io
 from io import StringIO
 import os
 # from env import Set_Environ 
+# Set_Environ()
+
 
 
 def SaveCookie(username, password, login_url, gituser, gittoken, repository_name, cookiename):
@@ -161,9 +163,10 @@ def Get_Message_Holder(repo_main_url, token):
 def Send_Diff_In_Github(differences, csv_headers, username, token, repository_name, file_name, repo_main_url):
     previous_message_holder = Get_Message_Holder(repo_main_url, token)
     len_new_data = len(differences)
+    
     if len_new_data != 0:
         # File details
-        csv_data = io.StringIO()
+        csv_data = io.StringIO(newline='\n')
         csv_writer = csv.DictWriter(csv_data, fieldnames=csv_headers)
         csv_writer.writeheader()
         csv_writer.writerows(previous_message_holder)
@@ -202,6 +205,11 @@ def Save_CSV(data, filename, csv_hearders, username, token, repository_name, len
                       csv_hearders, repository_name, len_new_data)
 
 
+def Set_Ending(listofdict):
+    unix_data = [{k: v.replace('\r\n', '\n') for k, v in d.items()} for d in listofdict]
+    return unix_data
+
+
 def Load_CSV(filename, repo_main_url, token, ):
     # GitHub repository URL
     url = repo_main_url+filename
@@ -216,7 +224,7 @@ def Load_CSV(filename, repo_main_url, token, ):
     if response.status_code == 200:
         # Convert the response content to a string buffer
         content = response.content.decode('utf-8')
-        buffer = StringIO(content)
+        buffer = StringIO(content, newline='\n')
 
         # Read the CSV file from the string buffer
         reader = csv.DictReader(buffer)
@@ -224,6 +232,7 @@ def Load_CSV(filename, repo_main_url, token, ):
 
         # Print the data
         print(f'{len(data)} rows loaded from {filename} successfully!')
+        data = Set_Ending(data)
         return data
     else:
         print('Failed to read the CSV file.')
@@ -232,7 +241,7 @@ def Load_CSV(filename, repo_main_url, token, ):
 def Upload_CSV_Github(username, token, file_name, new_data, csv_headers, repository_name, len_new_data):
     if len_new_data != 0:
         # File details
-        csv_data = io.StringIO()
+        csv_data = io.StringIO(newline='\n')
         csv_writer = csv.DictWriter(csv_data, fieldnames=csv_headers)
         csv_writer.writeheader()
         csv_writer.writerows(new_data)
@@ -263,7 +272,6 @@ def Upload_CSV_Github(username, token, file_name, new_data, csv_headers, reposit
 
 def main():
     # Save cookies in cookies.pkl
-    #Set_Environ()
     username = os.getenv('GITHUB_USERNAME')
     token = os.getenv('GITHUB_TOKEN')
     repo_name = os.getenv('GITHUB_REPO_NAME')
@@ -272,11 +280,11 @@ def main():
     SaveCookie(lms_username, lms_password, "http://lms.ui.ac.ir/login",
                username, token, repo_name, 'cookies.pkl')
 
-    urls = ['http://lms.ui.ac.ir/group/84632',
+    urls = ['http://lms.ui.ac.ir/group/83713',
+            'http://lms.ui.ac.ir/group/84632',
             'http://lms.ui.ac.ir/group/84738',
             'http://lms.ui.ac.ir/group/84675',
-            'http://lms.ui.ac.ir/group/84643',
-            'http://lms.ui.ac.ir/group/83713']
+            'http://lms.ui.ac.ir/group/84643',]
     csv_headers = ['User', 'Text', 'Attach', 'Date']
     css_selectors = ['.feed_item_username',
                      '.feed_item_bodytext',
