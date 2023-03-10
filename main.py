@@ -8,7 +8,9 @@ from github import Github
 import io
 from io import StringIO
 import os
-from env import Set_Environ 
+# from env import Set_Environ 
+# Set_Environ()
+
 
 
 def SaveCookie(username, password, login_url, gituser, gittoken, repository_name, cookiename):
@@ -203,6 +205,11 @@ def Save_CSV(data, filename, csv_hearders, username, token, repository_name, len
                       csv_hearders, repository_name, len_new_data)
 
 
+def Set_Ending(listofdict):
+    unix_data = [{k: v.replace('\r\n', '\n') for k, v in d.items()} for d in listofdict]
+    return unix_data
+
+
 def Load_CSV(filename, repo_main_url, token, ):
     # GitHub repository URL
     url = repo_main_url+filename
@@ -225,6 +232,7 @@ def Load_CSV(filename, repo_main_url, token, ):
 
         # Print the data
         print(f'{len(data)} rows loaded from {filename} successfully!')
+        data = Set_Ending(data)
         return data
     else:
         print('Failed to read the CSV file.')
@@ -264,7 +272,6 @@ def Upload_CSV_Github(username, token, file_name, new_data, csv_headers, reposit
 
 def main():
     # Save cookies in cookies.pkl
-    Set_Environ()
     username = os.getenv('GITHUB_USERNAME')
     token = os.getenv('GITHUB_TOKEN')
     repo_name = os.getenv('GITHUB_REPO_NAME')
