@@ -120,13 +120,13 @@ def Get_Messages(url, css_selectors, csv_headers, token, repo_main_url):
         timestamp_span = feed_item_date.find('span', class_='timestamp')
         # extract the time as a string
         time_str = timestamp_span['title']
-        attach = '' if attach is None else attach.text
+        # attach = '' if attach is None else attach.text
 
         msg = {
-            csv_headers[0]: user.text.strip().replace('\n\n', ''),
-            csv_headers[1]: text.text.strip().replace('\n\n', ''),
-            csv_headers[2]: attach.strip().replace('\n\n', ''),
-            csv_headers[3]: time_str.strip().replace('\n\n', '')
+            csv_headers[0]: user.text.strip().replace('\n\n', '') if user is not None else '',
+            csv_headers[1]: text.text.strip().replace('\n\n', '') if text is not None else '',
+            csv_headers[2]: attach.text.strip().replace('\n\n', '') if attach is not None else '',
+            csv_headers[3]: time_str.strip().replace('\n\n', '') if time_str is not None else ''
                }
 
         messages.append(msg)
