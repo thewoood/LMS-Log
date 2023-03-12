@@ -1,0 +1,47 @@
+'''
+i want to send a post requests to 'https://lms-log.davwvod.workers.dev' using this DNS-over-HTTPS: https://free.shecan.ir/dns-query
+TODO
+1) DONE
+Cookie Expiration
+2) DONE
+    save info in csv, load from csv, compare list with csv 
+    EACH CLASS HAS A DIFFERENT CSV FILE
+3) DONE
+    checking all classes instead of just mabani
+4) DONE
+خب به این نتیجه رسیدیم که چون بعضی پیاما اتچمنت ندارن، سایز لیست اتچشمنت ها با
+سایز لیست یوزر ها یکی نمیشه و میترکه. پس چی کار میکنیم؟ هر بار یک بلاک کامل از پیام رو
+استخراج میکنیم و بعد توش کنکاش انجام میدیم. سی اس اس سلکتور هر بلاک پیام:
+.wall-action-item
+میشه با chat gpt فهمید که چطوری به کلاس های توی این بلاک نفوذ کرد
+5) DONE
+    save files in a private github repo
+6) is it possible to send message in telegram using Liara? 
+    Answer: FUCK NO!
+    
+    
+7) DONE
+    Save date and time of message: .timestamp
+8) Send the link of attachment
+9) DONE!
+    Load data from github
+10) Load cookies from github
+11) Save cookies to github
+12) Restructure the code
+    use black.py to pretiffy it
+13) DONE
+    since we read csv from github, the returned value is not string and can\'t be updated
+15) DONE
+    a function to get previous and new, and return what\'s different 
+
+16) DONE
+    Set environ in liara
+17) set environ in replit
+18) Last in first out
+19) Too many functions with the same arguments
+20) reomve \r in the file
+21) survey return error
+22) 180second vs. 360 seconds
+23) connect liara to github actions 
+'''
+
