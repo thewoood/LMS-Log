@@ -209,7 +209,11 @@ def Set_Ending(listofdict):
     unix_data = [{k: v.replace('\r\n', '\n') for k, v in d.items()} for d in listofdict]
     return unix_data
 
-
+def Load_CSV_GDrive():
+    ...
+    
+    
+    
 def Load_CSV(filename, repo_main_url, token, ):
     # GitHub repository URL
     url = repo_main_url+filename
