@@ -9,3 +9,7 @@ test.json
 env.py
 .liaraignore
 .vscode
+.space
+.spaceignore
+Spacefile
+__pycache__

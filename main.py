@@ -301,9 +301,15 @@ def main():
                   csv_headers, repo_main_url, repo_name)
 
 
-if __name__ == '__main__':
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route('/') 
+def start():
     while True:
         main()
         print('Wating for 360 seconds')
         sleep(360)
-
+# if __name__ == '__main__':
+#     start()
