@@ -276,6 +276,10 @@ def Upload_CSV_Github(username, token, file_name, new_data, csv_headers, reposit
 
 def main():
     # Save cookies in cookies.pkl
+    # Run this if you're local
+    from env import Set_Environ
+    Set_Environ()
+    
     username = os.getenv('GITHUB_USERNAME')
     token = os.getenv('GITHUB_TOKEN')
     repo_name = os.getenv('GITHUB_REPO_NAME')
@@ -283,12 +287,11 @@ def main():
     lms_password = os.getenv('LMS_PASSWORD')
     SaveCookie(lms_username, lms_password, "http://lms.ui.ac.ir/login",
                username, token, repo_name, 'cookies.pkl')
-
-    urls = ['http://lms.ui.ac.ir/group/83713',
+    urls = ['http://lms.ui.ac.ir/group/84643',
+            'http://lms.ui.ac.ir/group/83713',
             'http://lms.ui.ac.ir/group/84632',
             'http://lms.ui.ac.ir/group/84738',
-            'http://lms.ui.ac.ir/group/84675',
-            'http://lms.ui.ac.ir/group/84643',]
+            'http://lms.ui.ac.ir/group/84675',]
     csv_headers = ['User', 'Text', 'Attach', 'Date']
     css_selectors = ['.feed_item_username',
                      '.feed_item_bodytext',
@@ -301,15 +304,15 @@ def main():
                   csv_headers, repo_main_url, repo_name)
 
 
-from flask import Flask
+# from flask import Flask
 
-app = Flask(__name__)
+# app = Flask(__name__)
 
-@app.route('/') 
-def start():
-    while True:
-        main()
-        print('Wating for 360 seconds')
-        sleep(360)
+# @app.route('/') 
+# def start():
+#     while True:
+main()
+print('Wating for 360 seconds')
+sleep(360)
 # if __name__ == '__main__':
 #     start()
