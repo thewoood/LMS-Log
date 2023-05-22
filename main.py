@@ -8,23 +8,24 @@ from github import Github
 import io
 from io import StringIO
 import os
+from deta import Deta
+from flask import Flask, request
+import json
 # from env import Set_Environ 
 # Set_Environ()
+    
 
-
-
-def SaveCookie(username, password, login_url, gituser, gittoken, repository_name, cookiename):
+def Save_Cookies(lms_username, lms_password, login_url, file_name):
     # 1: Log in
     # 2: Save Cookies in Cookies.pkl
-
     session_requests = requests.session()
 
     result = session_requests.get(login_url)  # Loading Login Url
 
     # Setting Up Login Info
     payload = {
-        "username": username,
-        "password": password,
+        "username": lms_username,
+        "password": lms_password,
     }
 
     # Logging in
@@ -35,67 +36,48 @@ def SaveCookie(username, password, login_url, gituser, gittoken, repository_name
     )
 
     # Status Code
-    print(result.status_code)
+    print(f'{login_url}: {result.status_code}')
 
+    # Upload cookies to Deta Drive
     cookies = utils.dict_from_cookiejar(session_requests.cookies)
-    Save_Cookies_To_Github(
-        gituser, gittoken, repository_name, cookiename, cookies)
-
+    cookies_pickle = pickle.dumps(cookies)
+    drive.put(file_name, cookies_pickle, content_type='application/octet-stream')
+    print('----Cookies Uploaded!----')
+    
     session_requests.close()
 
 
-def Save_Cookies_To_Github(username, token, repository_name, file_name, cookies):
-    # Read CSV file content
-    file_content = pickle.dumps(cookies)
+def Load_Cookies(file_name):
+    cookies_deta_drive = drive.get(file_name)
+    cookies_pickle = pickle.loads(cookies_deta_drive.read())
+    cookies_deta_drive.close()
+    print(f'----Is "cookies_deta_drive" closed: {cookies_deta_drive.closed}-----')
+    return cookies_pickle
 
-    # Authenticate with GitHub
-    g = Github(username, token)
+def Get_Group_Links(lms_homepage_url: str, cookies: pickle) -> list:
+    session_requests = requests.session()
+    session_requests.cookies.update(utils.cookiejar_from_dict(cookies))
+    
+    result = session_requests.get(
+        url=lms_homepage_url,
+        headers=dict(referer=lms_homepage_url),
+    )
+    
+    result.apparent_encoding
+    soup = BeautifulSoup(result.text, 'html.parser')
+    
+    #Extract all profiles
+    profile_groups = soup.find('ul', id='profile_groups')
+    group_a_tags = profile_groups.find_all('a')
+    group_links = [group_a_tag['href'] for group_a_tag in group_a_tags]
 
-    # Get the repository
-    repo = g.get_user().get_repo(repository_name)
-
-    # Check if the file exists
-    try:
-        file = repo.get_contents(file_name)
-        # Update the existing file
-        repo.update_file(file.path, 'Updated!', file_content, file.sha)
-        print('cookies updated!')
-    except:
-        # Create a new file
-        repo.create_file(file_name, 'Created!', file_content)
-        print('cookies created.')
-
-
-def Load_Cookies_From_Github(repo_main_url, filename, token):
-    # GitHub repository URL
-    url = repo_main_url+filename
-
-    # HTTP headers
-    headers = {'Authorization': f'token {token}'}
-
-    # Make the HTTP request
-    response = requests.get(url, headers=headers)
-
-    # Check if the request was successful
-    if response.status_code == 200:
-        # Convert the response content to a string buffer
-        content = io.BytesIO(response.content)
-
-        # Loading the cookies
-        cookies = pickle.load(content)
-        return cookies
-
-    else:
-        print('Failed to read the Cookies file.')
-
-
-def Get_Messages(url, css_selectors, csv_headers, token, repo_main_url):
-    messages = []
+    return group_links
+    
+def Get_LMS_Messages(url: str, css_selectors:dict, cookies: pickle):
     session_requests = requests.session()
 
     # Loading the cookies
-    c = Load_Cookies_From_Github(repo_main_url, 'cookies.pkl', token)
-    session_requests.cookies.update(utils.cookiejar_from_dict(c))
+    session_requests.cookies.update(utils.cookiejar_from_dict(cookies))
 
     result = session_requests.get(
         url,
@@ -108,40 +90,52 @@ def Get_Messages(url, css_selectors, csv_headers, token, repo_main_url):
 
     msg_boxes = soup.select('.wall-action-item')
 
+    activities = []
     for msg_box in msg_boxes:
         html = msg_box.prettify()
         sub_soup = BeautifulSoup(html, 'html.parser')
         
-        user = sub_soup.select_one(css_selectors[0])
-        text = sub_soup.select_one(css_selectors[1])
-        attach = sub_soup.select_one(css_selectors[2])
-        feed_item_date = sub_soup.find('div', class_='feed_item_date')
+        user = sub_soup.select_one(css_selectors['user'])
+        
+        message = sub_soup.select_one(css_selectors['message'])
+        message = '' if message is None else message.text
+        
+        attachment = sub_soup.select_one(css_selectors['attachment'])
+        attachment_text = '' if attachment is None else attachment.text
+        attachment_link = f'https://lms.ui.ac.ir/{attachment.find("a")["href"]}' if attachment != None else ''
+
         # find the "timestamp" span element within the "feed_item_date" div
+        feed_item_date = sub_soup.find('div', class_='feed_item_date')
         timestamp_span = feed_item_date.find('span', class_='timestamp')
         # extract the time as a string
         time_str = timestamp_span['title']
-        attach = '' if attach is None else attach.text
-
+        
         msg = {
-            csv_headers[0]: user.text.strip().replace('\n\n', ''),
-            csv_headers[1]: text.text.strip().replace('\n\n', ''),
-            csv_headers[2]: attach.strip().replace('\n\n', ''),
-            csv_headers[3]: time_str.strip().replace('\n\n', '')
+            'user': user.text.strip().replace('\n\n', ''),
+            'message': message.strip().replace('\n\n', ''),
+            'attachment': attachment_text.strip().replace('\n\n', ''),
+            'attachment_link': attachment_link,
+            'date': time_str.strip().replace('\n\n', '')
                }
 
-        messages.append(msg)
+        activities.append(msg)
+    
+    print(f'{url.split("/")[-1]}: {len(activities)} MESSAGES - LMS')
+    return activities
 
-    print(f'{len(messages)} rows read from lms!')
-    return messages
-
-# Gets a url and sends it to social media
-
-
-def Whats_New(url, username, token, css_selectors, csv_headers, repo_main_url, repository_name):
-    filename = f"{url.split('/')[-1]}.csv"
-    new_data = Get_Messages(
-        url, css_selectors, csv_headers, token, repo_main_url)
-    previous_data = Load_CSV(filename, repo_main_url, token)
+def Whats_New(url: str, css_selectors: dict,):
+    # filename = f"{url.split('/')[-1]}.csv"
+    old_data = Load_Json('data.json')
+    new_data = Get_LMS_Messages(url, css_selectors,)
+    
+    # lesson_name = url.split('/')[-1]
+    # old_data = old_data.get(lesson_name, {}).get('public_activity', [])
+    difference = [activity for activity in new_data if activity not in old_data]
+    with open('log.txt', 'w+', encoding='utf-8') as file:
+        file.write(str(difference))
+    
+    # Commented to check functionality of Get_LMS_Messages
+    '''previous_data = Load_CSV(filename, repo_main_url, token)
     # check if there is non csv file relateed to the lesson in github, or it's empty
     if previous_data is None:
         differences = new_data
@@ -152,7 +146,7 @@ def Whats_New(url, username, token, css_selectors, csv_headers, repo_main_url, r
                         repository_name, 'messageholder.csv', repo_main_url)
     repo_name = repo_main_url.split('/')[-3]
     Save_CSV(new_data, filename, csv_headers, username,
-             token, repo_name, len(differences))
+             token, repo_name, len(differences))'''
 
 
 def Get_Message_Holder(repo_main_url, token):
@@ -208,12 +202,13 @@ def Save_CSV(data, filename, csv_hearders, username, token, repository_name, len
 def Set_Ending(listofdict):
     unix_data = [{k: v.replace('\r\n', '\n') for k, v in d.items()} for d in listofdict]
     return unix_data
+      
 
-def Load_CSV_GDrive():
-    ...
-    
-    
-    
+def Load_Json(file_name: str) -> json.load:
+    json_drive = drive.get(file_name)
+    data_json = json.load(json_drive)
+    return data_json
+      
 def Load_CSV(filename, repo_main_url, token, ):
     # GitHub repository URL
     url = repo_main_url+filename
@@ -279,40 +274,38 @@ def main():
     # Run this if you're local
     from env import Set_Environ
     Set_Environ()
-    
-    username = os.getenv('GITHUB_USERNAME')
-    token = os.getenv('GITHUB_TOKEN')
-    repo_name = os.getenv('GITHUB_REPO_NAME')
+
     lms_username = os.getenv('LMS_USERNAME')
     lms_password = os.getenv('LMS_PASSWORD')
-    SaveCookie(lms_username, lms_password, "http://lms.ui.ac.ir/login",
-               username, token, repo_name, 'cookies.pkl')
-    urls = ['http://lms.ui.ac.ir/group/84643',
-            'http://lms.ui.ac.ir/group/83713',
-            'http://lms.ui.ac.ir/group/84632',
-            'http://lms.ui.ac.ir/group/84738',
-            'http://lms.ui.ac.ir/group/84675',]
-    csv_headers = ['User', 'Text', 'Attach', 'Date']
-    css_selectors = ['.feed_item_username',
-                     '.feed_item_bodytext',
-                     '.feed_item_attachments',
-                     '.timestamp',
-                     ]
-    repo_main_url = f'https://raw.githubusercontent.com/{username}/{repo_name}/main/'
+
+    Save_Cookies(lms_username, lms_password, "http://lms.ui.ac.ir/login", 'cookies.pkl')
+    cookies_pickle = Load_Cookies('cookies.pkl')
+    
+    groups_links = Get_Group_Links('http://lms.ui.ac.ir/members/home', cookies=cookies_pickle)
+    full_group_links = ['http://lms.ui.ac.ir/' + group_link for group_link in groups_links]
+    
+    css_selectors = {'user': '.feed_item_username',
+                     'message': '.feed_item_bodytext',
+                     'attachment': '.feed_item_attachments',
+                     'date': '.timestamp',
+                     }
+    
+    Get_LMS_Messages(url= full_group_links[3], css_selectors=css_selectors,cookies=cookies_pickle)
+    # Commented to see if deta drive stores cookies correctly 
+    '''csv_headers = ['User', 'Text', 'Attach', 'Date']
+
     for url in urls:
         Whats_New(url, username, token, css_selectors,
-                  csv_headers, repo_main_url, repo_name)
+                  csv_headers, repo_main_url, repo_name)'''
 
 
-# from flask import Flask
 
-# app = Flask(__name__)
+deta = Deta()
+drive = deta.Drive('My_Storage')
 
-# @app.route('/') 
-# def start():
-#     while True:
-main()
-print('Wating for 360 seconds')
-sleep(360)
-# if __name__ == '__main__':
-#     start()
+app = Flask(__name__)
+
+@app.route('/')
+def start():
+    main()
+    return "<h1>Hello!</h1>"

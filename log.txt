@@ -1,0 +1,22 @@
+[
+    {'user': 'علیرضا نصراصفهانی', 'message': 'با سلام. نمرات میانترم به پیوست می باشد.', 'attachment': '001.jpg', 'attachment_link': 'https: /lms.ui.ac.ir/public/group/9a/9a/0f/f7c0f_7e23.jpg', 'date': '۲۴ ارديبهشت ۰۲, ۰۵:۴۱ عصر'
+    },
+    {'user': 'علیرضا نصراصفهانی', 'message': '', 'attachment': 'mabani6.pdf', 'attachment_link': 'https:/lms.ui.ac.ir/public/group/fd/1f/0f/f01ed_a250.pdf', 'date': '۳ اسفند ۰۱, ۰۲:۰۵ عصر'
+    },
+    {'user': 'علیرضا نصراصفهانی', 'message': '', 'attachment': 'mabani5.pdf', 'attachment_link': 'https:/lms.ui.ac.ir/public/group/fc/1f/0f/f01ec_d427.pdf', 'date': '۳ اسفند ۰۱, ۰۲:۰۵ عصر'
+    },
+    {'user': 'علیرضا نصراصفهانی', 'message': '', 'attachment': 'mabani4.pdf', 'attachment_link': 'https:/lms.ui.ac.ir/public/group/fb/1f/0f/f01eb_39e8.pdf', 'date': '۳ اسفند ۰۱, ۰۲:۰۵ عصر'
+    },
+    {'user': 'علیرضا نصراصفهانی', 'message': '', 'attachment': 'mabani3.pdf', 'attachment_link': 'https:/lms.ui.ac.ir/public/group/29/13/0f/ef525_b07a.pdf', 'date': '۲۳ بهمن ۰۱, ۰۴:۳۶ عصر'
+    },
+    {'user': 'علیرضا نصراصفهانی', 'message': '', 'attachment': 'mabani2.pdf', 'attachment_link': 'https:/lms.ui.ac.ir/public/group/28/13/0f/ef524_76e2.pdf', 'date': '۲۳ بهمن ۰۱, ۰۴:۳۵ عصر'
+    },
+    {'user': 'زين الدين - عرفان', 'message': 'لینک گروه مبانی ریاضی t.me/+XqE8mzeqp-YzMzc0', 'attachment': '', 'attachment_link': '', 'date': '۲۱ بهمن ۰۱, ۰۷:۲۳ عصر'
+    },
+    {'user': 'علیرضا نصراصفهانی', 'message': '', 'attachment': 'بنام خداوند جان و خرد.pdf', 'attachment_link': 'https:/lms.ui.ac.ir/public/group/12/0d/0f/eef14_3fa2.pdf', 'date': '۱۶ بهمن ۰۱, ۱۱:۵۲ صبح'
+    },
+    {'user': 'علیرضا نصراصفهانی', 'message': '', 'attachment': 'mabani1.pdf', 'attachment_link': 'https:/lms.ui.ac.ir/public/group/11/0d/0f/eef13_638b.pdf', 'date': '۱۶ بهمن ۰۱, ۱۱:۵۲ صبح'
+    },
+    {'user': 'علیرضا نصراصفهانی', 'message': 'با سلام خدمت دانشجویان گرامی. سرفصل, مراجع و فایل جلسات درس به پیوست می باشد.', 'attachment': 'mabanikol.pdf', 'attachment_link': 'https:/lms.ui.ac.ir/public/group/10/0d/0f/eef12_3f2c.pdf', 'date': '۱۶ بهمن ۰۱, ۱۱:۵۲ صبح'
+    }
+]
