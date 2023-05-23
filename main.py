@@ -72,6 +72,21 @@ def Get_Group_Links(lms_homepage_url: str, cookies: pickle) -> list:
     group_links = [group_a_tag['href'] for group_a_tag in group_a_tags]
 
     return group_links
+   
+   
+def Make_Raw_Data_Json(deta_file_name: str, group_names: list) -> None:
+    raw_data = {} 
+    for group_name in group_names:
+         raw_data += {
+            group_name.split('/')[-1]: 
+                {
+                    'public_activity': [],
+                    'private_message': []
+                }
+                    }
+    data_json = json.dumps(raw_data) 
+    drive.put(name=deta_file_name, data=data_json, content_type='application/json')
+    print('---- Raw "data.json" uploaded to deta drive ----')
     
 def Get_LMS_Messages(url: str, css_selectors:dict, cookies: pickle):
     session_requests = requests.session()
@@ -123,17 +138,28 @@ def Get_LMS_Messages(url: str, css_selectors:dict, cookies: pickle):
     print(f'{url.split("/")[-1]}: {len(activities)} MESSAGES - LMS')
     return activities
 
-def Whats_New(url: str, css_selectors: dict,):
-    # filename = f"{url.split('/')[-1]}.csv"
-    old_data = Load_Json('data.json')
-    new_data = Get_LMS_Messages(url, css_selectors,)
-    
+def GET_Difference_of_Activity_LMS(group_name, old_data: dict, new_data: dict):
+    # old_data = Load_Json(deta_file_name)
+    # new_data = Get_LMS_Messages(url, css_selectors, cookies)
     # lesson_name = url.split('/')[-1]
-    # old_data = old_data.get(lesson_name, {}).get('public_activity', [])
-    difference = [activity for activity in new_data if activity not in old_data]
-    with open('log.txt', 'w+', encoding='utf-8') as file:
-        file.write(str(difference))
+    # old_data = old_data.get(group_name, {}).get('public_activity', [])
+    difference = [activity for activity in new_data if str(activity) not in old_data]
     
+    # for i in range(len(new_data)):
+    #     for (letter1, letter2) in zip(str(new_data[i]), str(old_data[i-1])):
+    #         with open('log.txt', 'a+', encoding='utf-8') as file:
+    #             file.write(str(letter1 == letter2))
+    with open('log.txt', 'w+', encoding='utf-8') as file:
+        file.write(str(old_data[2])+'\n')
+        file.write(str(new_data[3]))
+        
+    '''SEND Difference to Telegram'''
+    '''Overwrite the newdata'''
+  
+        
+    # old_data[group_name]['public_activity'] = new_data
+    return difference
+    # Upload_Json(old_data, deta_file_name)
     # Commented to check functionality of Get_LMS_Messages
     '''previous_data = Load_CSV(filename, repo_main_url, token)
     # check if there is non csv file relateed to the lesson in github, or it's empty
@@ -202,12 +228,19 @@ def Save_CSV(data, filename, csv_hearders, username, token, repository_name, len
 def Set_Ending(listofdict):
     unix_data = [{k: v.replace('\r\n', '\n') for k, v in d.items()} for d in listofdict]
     return unix_data
-      
 
-def Load_Json(file_name: str) -> json.load:
+def Load_Json(file_name: str) -> dict:
     json_drive = drive.get(file_name)
-    data_json = json.load(json_drive)
-    return data_json
+    if json_drive:
+        data_json = json.load(json_drive)
+        data_json = json.loads(data_json)
+
+        return dict(data_json)
+    return dict()
+
+def Upload_Json(new_data:dict, file_name: str):
+    file_data = json.dumps(new_data)
+    drive.put(file_name, file_data, content_type="application/json")
       
 def Load_CSV(filename, repo_main_url, token, ):
     # GitHub repository URL
@@ -235,7 +268,6 @@ def Load_CSV(filename, repo_main_url, token, ):
         return data
     else:
         print('Failed to read the CSV file.')
-
 
 def Upload_CSV_Github(username, token, file_name, new_data, csv_headers, repository_name, len_new_data):
     if len_new_data != 0:
@@ -281,16 +313,73 @@ def main():
     Save_Cookies(lms_username, lms_password, "http://lms.ui.ac.ir/login", 'cookies.pkl')
     cookies_pickle = Load_Cookies('cookies.pkl')
     
-    groups_links = Get_Group_Links('http://lms.ui.ac.ir/members/home', cookies=cookies_pickle)
-    full_group_links = ['http://lms.ui.ac.ir/' + group_link for group_link in groups_links]
+    groups_links_endings = Get_Group_Links('http://lms.ui.ac.ir/members/home', cookies=cookies_pickle)
+    full_group_links = ['http://lms.ui.ac.ir/' + group_link for group_link in groups_links_endings]
     
     css_selectors = {'user': '.feed_item_username',
                      'message': '.feed_item_bodytext',
                      'attachment': '.feed_item_attachments',
                      'date': '.timestamp',
                      }
+    old_data = Load_Json('data.json')
+    new_data = Get_LMS_Messages(full_group_links[2], css_selectors, cookies_pickle)
+    # if not old_data:
+    #     Make_Raw_Data_Json('data.json', full_group_links)
     
-    Get_LMS_Messages(url= full_group_links[3], css_selectors=css_selectors,cookies=cookies_pickle)
+    group_public_activity = old_data.get(full_group_links[2].split('/')[-1], {}).get('public_activity', [])
+ 
+    difference = GET_Difference_of_Activity_LMS(group_name=full_group_links[2].split('/')[-1], old_data=group_public_activity, new_data=new_data)
+    json_new_data = {full_group_links[2].split('/')[-1]:{'public_activity': new_data}}
+    old_data |= json_new_data
+            
+    json_old_data = json.dumps(old_data)
+    test_json = {'84632': {'public_activity': [
+    {'user': 'علیرضا نصراصفهانی', 'message': 'با سلام. نمرات میانترم به پیوست می باشد.', 'attachment': '001.jpg', 'attachment_link': 'https://lms.ui.ac.ir/public/group/9a/9a/0f/f7c0f_7e23.jpg', 'date': '۲۴ ارديبهشت ۰۲, ۰۵:۴۱ عصر'
+    },
+    {'user': 'علیرضا نصراصفهانی', 'message': '', 'attachment': 'mabani6.pdf', 'attachment_link': 'https://lms.ui.ac.ir/public/group/fd/1f/0f/f01ed_a250.pdf', 'date': '۳ اسفند ۰۱, ۰۲:۰۵ عصر'
+    },
+    {'user': 'علیرضا نصراصفهانی', 'message': '', 'attachment': 'mabani5.pdf', 'attachment_link': 'https://lms.ui.ac.ir/public/group/fc/1f/0f/f01ec_d427.pdf', 'date': '۳ اسفند ۰۱, ۰۲:۰۵ عصر'
+    },
+    {'user': 'علیرضا نصراصفهانی', 'message': '', 'attachment': 'mabani4.pdf', 'attachment_link': 'https://lms.ui.ac.ir/public/group/fb/1f/0f/f01eb_39e8.pdf', 'date': '۳ اسفند ۰۱, ۰۲:۰۵ عصر'
+    },
+    {'user': 'علیرضا نصراصفهانی', 'message': '', 'attachment': 'mabani3.pdf', 'attachment_link': 'https://lms.ui.ac.ir/public/group/29/13/0f/ef525_b07a.pdf', 'date': '۲۳ بهمن ۰۱, ۰۴:۳۶ عصر'
+    },
+    {'user': 'علیرضا نصراصفهانی', 'message': '', 'attachment': 'mabani2.pdf', 'attachment_link': 'https://lms.ui.ac.ir/public/group/28/13/0f/ef524_76e2.pdf', 'date': '۲۳ بهمن ۰۱, ۰۴:۳۵ عصر'
+    },
+    {'user': 'زين الدين - عرفان', 'message': 'لینک گروه مبانی ریاضی t.me/+XqE8mzeqp-YzMzc0', 'attachment': '', 'attachment_link': '', 'date': '۲۱ بهمن ۰۱, ۰۷:۲۳ عصر'
+    },
+    {'user': 'علیرضا نصراصفهانی', 'message': '', 'attachment': 'بنام خداوند جان و خرد.pdf', 'attachment_link': 'https://lms.ui.ac.ir/public/group/12/0d/0f/eef14_3fa2.pdf', 'date': '۱۶ بهمن ۰۱, ۱۱:۵۲ صبح'
+    },
+    {'user': 'علیرضا نصراصفهانی', 'message': '', 'attachment': 'mabani1.pdf', 'attachment_link': 'https://lms.ui.ac.ir/public/group/11/0d/0f/eef13_638b.pdf', 'date': '۱۶ بهمن ۰۱, ۱۱:۵۲ صبح'
+    },
+    {'user': 'علیرضا نصراصفهانی', 'message': 'با سلام خدمت دانشجویان گرامی. سرفصل, مراجع و فایل جلسات درس به پیوست می باشد.', 'attachment': 'mabanikol.pdf', 'attachment_link': 'https://lms.ui.ac.ir/public/group/10/0d/0f/eef12_3f2c.pdf', 'date': '۱۶ بهمن ۰۱, ۱۱:۵۲ صبح'
+    }
+]
+}, '84643': {'public_activity': [
+    {'user': 'فاطمه دوست محمدي', 'message': 'درود بر دانشجویان گرامی\n     \n      تمرین های مربوط به فصل 15\n      \n       *شماره تمرین های عملی : 14 - 18 - 28 - 29\n       \n        *شماره تمرین های بخش 7 : 11 - 19\n        \n         لطفا این تمرینات را برای جلسه...\n         \n          بیشتر\n         \n     درود بر دانشجویان گرامی\n     \n      تمرین های مربوط به فصل 15\n      \n       *شماره تمرین های عملی : 14 - 18 - 28 - 29\n       \n        *شماره تمرین های بخش 7 : 11 - 19\n        \n         لطفا این تمرینات را برای جلسه شنبه مورخ 30 اردیبهشت حل نمایید.\n         \n          چند تمرین دیگر از بخش 15 و یک سری تمرین نیز از بخش 16 تعیین میشود که تا چند روز آینده داخل سامانه میگذارم تا برای جلسه های بعدی حل نمایید.', 'attachment': '', 'attachment_link': '', 'date': '۲۲ ارديبهشت ۰۲, ۱۰:۴۴ صبح'
+    },
+    {'user': 'فاطمه دوست محمدي', 'message': '', 'attachment': 'طرح درس ریاضی 2.pdf', 'attachment_link': 'https://lms.ui.ac.ir/public/group/df/68/0f/f4a86_37f2.pdf', 'date': '۲۶ فروردين ۰۲, ۰۶:۲۹ عصر'
+    },
+    {'user': 'فاطمه دوست محمدي', 'message': '', 'attachment': 'seri7.pdf', 'attachment_link': 'https://lms.ui.ac.ir/public/group/dc/68/0f/f4a83_1a13.pdf', 'date': '۲۶ فروردين ۰۲, ۰۶:۲۶ عصر'
+    },
+    {'user': 'فاطمه دوست محمدي', 'message': '', 'attachment': 'seri6.pdf', 'attachment_link': 'https://lms.ui.ac.ir/public/group/db/68/0f/f4a82_3368.pdf', 'date': '۲۶ فروردين ۰۲, ۰۶:۲۶ عصر'
+    },
+    {'user': 'فاطمه دوست محمدي', 'message': '', 'attachment': 'seri5.pdf', 'attachment_link': 'https://lms.ui.ac.ir/public/group/da/68/0f/f4a81_1a33.pdf', 'date': '۲۶ فروردين ۰۲, ۰۶:۲۵ عصر'
+    },
+    {'user': 'فاطمه دوست محمدي', 'message': '', 'attachment': 'seri4.pdf', 'attachment_link': 'https://lms.ui.ac.ir/public/group/d9/68/0f/f4a80_6efb.pdf', 'date': '۲۶ فروردين ۰۲, ۰۶:۲۵ عصر'
+    },
+    {'user': 'فاطمه دوست محمدي', 'message': '', 'attachment': 'seri3.pdf', 'attachment_link': 'https://lms.ui.ac.ir/public/group/d8/68/0f/f4a7f_e09d.pdf', 'date': '۲۶ فروردين ۰۲, ۰۶:۲۵ عصر'
+    },
+    {'user': 'فاطمه دوست محمدي', 'message': '', 'attachment': 'seri2.pdf', 'attachment_link': 'https://lms.ui.ac.ir/public/group/d7/68/0f/f4a7e_c1a9.pdf', 'date': '۲۶ فروردين ۰۲, ۰۶:۲۵ عصر'
+    },
+    {'user': 'فاطمه دوست محمدي', 'message': '', 'attachment': 'seri1.pdf', 'attachment_link': 'https://lms.ui.ac.ir/public/group/d6/68/0f/f4a7d_bd74.pdf', 'date': '۲۶ فروردين ۰۲, ۰۶:۲۵ عصر'
+    }
+]
+}
+}
+    test_json = json.dumps(test_json)
+    drive.put('data.json', data=test_json,content_type='application/json')
+
     # Commented to see if deta drive stores cookies correctly 
     '''csv_headers = ['User', 'Text', 'Attach', 'Date']
 
