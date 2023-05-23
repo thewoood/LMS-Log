@@ -117,7 +117,7 @@ def Get_LMS_Messages(url: str, css_selectors:dict, cookies: pickle):
         
         attachment = sub_soup.select_one(css_selectors['attachment'])
         attachment_text = '' if attachment is None else attachment.text
-        attachment_link = f'https://lms.ui.ac.ir/{attachment.find("a")["href"]}' if attachment != None else ''
+        attachment_link = f'https://lms.ui.ac.ir{attachment.find("a")["href"]}' if attachment != None else ''
 
         # find the "timestamp" span element within the "feed_item_date" div
         feed_item_date = sub_soup.find('div', class_='feed_item_date')
@@ -150,8 +150,8 @@ def GET_Difference_of_Activity_LMS(group_name, old_data: dict, new_data: dict):
     #         with open('log.txt', 'a+', encoding='utf-8') as file:
     #             file.write(str(letter1 == letter2))
     with open('log.txt', 'w+', encoding='utf-8') as file:
-        file.write(str(old_data[2])+'\n')
-        file.write(str(new_data[3]))
+        # file.write(str(old_data[2])+'\n')
+        file.write(str(difference))
         
     '''SEND Difference to Telegram'''
     '''Overwrite the newdata'''
@@ -378,7 +378,7 @@ def main():
 }
 }
     test_json = json.dumps(test_json)
-    drive.put('data.json', data=test_json,content_type='application/json')
+    drive.put('data.json', data=test_json ,content_type='application/json')
 
     # Commented to see if deta drive stores cookies correctly 
     '''csv_headers = ['User', 'Text', 'Attach', 'Date']
