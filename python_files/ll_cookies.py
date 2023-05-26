@@ -15,6 +15,7 @@ def upload_cookies(lms_username: str, lms_password: str, login_url: str, file_na
         "password": lms_password,
     }
 
+
     # Logging in
     result = session_requests.post(
         login_url,

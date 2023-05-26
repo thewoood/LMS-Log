@@ -32,3 +32,13 @@ It should be replaced with max_id in this url to fetch the next messages:
 
     Hints: * 1: A good way to solve this could be using a recursiv function, calling itself ALA the button exists
     and appending the results, each time the function returns a new thing.
+
+# 27/5/2023
+
+Did some cleansing.
+Can't we just not store cookies locally if each time we're forced
+to use it?
+
+## TODO
+
+1: Find the maximum lifetime of cookies.

@@ -13,3 +13,4 @@ env.py
 .spaceignore
 Spacefile
 __pycache__
+log.json
