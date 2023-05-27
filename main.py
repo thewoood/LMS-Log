@@ -25,25 +25,22 @@ def main():
                      'date': '.timestamp',
                      }
     
-    old_data = ll_json.download_dict('data.json')
+    old_data = ll_json.download_dict('data2.json')
     
-    # for full_group_link in full_group_links:
-    full_group_link = group_links[0]
-    new_data = ll_lms.get_lms_activities(full_group_link, css_selectors,cookies_pickle)
-    with open('log.json', 'w+', encoding='utf-8') as file:
-        file.write(str(new_data))
-    old_data_public_activity = old_data.get(full_group_link.split('/')[-1], {}).get('public_activity', [])
+    group_link = group_links[0]
+    
+    new_data = ll_lms.get_lms_activities(group_link, css_selectors,cookies_pickle)
+    old_data_public_activity = old_data.get(group_link.split('/')[-1], {}).get('public_activity', [])
+
 
     difference = ll_lms.difference_of_activities(new_data=new_data, old_data=old_data_public_activity)
-    
-    json_new_data = {full_group_link.split('/')[-1]:{'public_activity': new_data}}
-    json_to_upload = json_new_data | old_data
+    formatted_difference = {group_link.split('/')[-1]:{'public_activity': difference}}
+    merged_old_and_difference = ll_lms.merge_activities_old_and_difference(old_data=old_data, difference=formatted_difference)
+    with open('log.json', 'w+', encoding='utf-8') as file:
+        file.write(str(merged_old_and_difference))
 
-    # drive.put('data.json', data=json_old_data ,content_type='application/json')
-    upload_result = ll_json.upload_dict(file_name='data.json', content=json_to_upload)
-
-    data_json = ll_json.download_dict('data.json')
-
+    # Upload new data
+    ll_json.upload_dict(file_name='data.json', content=merged_old_and_difference)
 
 app = Flask(__name__)
 

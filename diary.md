@@ -36,9 +36,11 @@ It should be replaced with max_id in this url to fetch the next messages:
 # 27/5/2023
 
 Did some cleansing.
-Can't we just not store cookies locally if each time we're forced
-to use it?
+Can't we just not store cookies locally if each time we're forced to use it?
 
+difference is ok. what about new data after difference
+is added?
+Now it's ok
 ## TODO
 
 1: Find the maximum lifetime of cookies.

@@ -72,6 +72,9 @@ def get_lms_activities(group_url: str, css_selectors: dict, cookies: pickle) -> 
     return activities
 
 
-def difference_of_activities(new_data: list, old_data: list):
-    difference = {new_row for new_row in new_data if new_row not in old_data}
+def difference_of_activities(new_data: list, old_data: list) -> dict:
+    difference = [new_row for new_row in new_data if new_row not in old_data]
     return difference
+
+def merge_activities_old_and_difference(old_data: dict, difference: dict) -> dict:
+    return old_data | difference
