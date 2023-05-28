@@ -41,6 +41,18 @@ Can't we just not store cookies locally if each time we're forced to use it?
 difference is ok. what about new data after difference
 is added?
 Now it's ok
+
+need a for loop to iterate over the whole groups.
+need to check the functionality of difference for all groups
+what happens if data.json hasn't been created?
+
+telegram.py has some problems with making to many lists inside another. it should get the hell right
+
+then action must be scheduled
+
+then recursive message reading
+
+then recusive private message reading
 ## TODO
 
 1: Find the maximum lifetime of cookies.

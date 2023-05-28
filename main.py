@@ -1,7 +1,6 @@
 import os
 from flask import Flask
-from python_files import ll_cookies, ll_json, ll_lms
-
+from python_files import ll_cookies, ll_json, ll_lms, ll_telegram
 
 def main():
     # Save cookies in cookies.pkl
@@ -28,16 +27,19 @@ def main():
     old_data = ll_json.download_dict('data2.json')
     
     group_link = group_links[0]
-    
-    new_data = ll_lms.get_lms_activities(group_link, css_selectors,cookies_pickle)
-    old_data_public_activity = old_data.get(group_link.split('/')[-1], {}).get('public_activity', [])
+    formatted_difference = {}
+    for group_link in group_links:
+        new_data = ll_lms.get_lms_activities(group_link, css_selectors,cookies_pickle)
+        old_data_public_activity = old_data.get(group_link.split('/')[-1], {}).get('public_activity', [])
 
 
-    difference = ll_lms.difference_of_activities(new_data=new_data, old_data=old_data_public_activity)
-    formatted_difference = {group_link.split('/')[-1]:{'public_activity': difference}}
+        difference = ll_lms.difference_of_activities(new_data=new_data, old_data=old_data_public_activity)
+        # formatted_difference += {group_link.split('/')[-1]:{'public_activity': difference}}
+        formatted_difference.update({group_link.split('/')[-1]:{'public_activity': difference}})
+        
+    ll_telegram.send_msg(formatted_difference=formatted_difference)
     merged_old_and_difference = ll_lms.merge_activities_old_and_difference(old_data=old_data, difference=formatted_difference)
-    with open('log.json', 'w+', encoding='utf-8') as file:
-        file.write(str(merged_old_and_difference))
+    
 
     # Upload new data
     ll_json.upload_dict(file_name='data.json', content=merged_old_and_difference)
