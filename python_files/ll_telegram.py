@@ -1,6 +1,16 @@
 import requests
 import os
 
+def send_log(msg: str) -> None:
+    CHAT_ID = chat_ids()[0]
+    TOKEN = token()
+    session = requests.Session()
+    telegram_url = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
+    response = session.post(telegram_url, json={
+                'text': msg,                
+                'chat_id': CHAT_ID,
+                })
+
 def send_msg(formatted_difference: dict) -> None:
     # repair difference
     difference = unempty_difference(formatted_difference=formatted_difference)
@@ -42,11 +52,6 @@ def unempty_difference(formatted_difference: dict) -> list:
 def prettify_msg(difference):
     user = f"\N{BUST IN SILHOUETTE} {difference['user']}:"
     message = f"\N{pencil} {difference['message']}"
-    attachment = f"\N{link symbol} [{difference['attachment']}]({difference['attachment_link']})"
     date = f"\N{clock face two oclock}{difference['date']}"
-    # return f"{user}\n{message}\n{attachment}\n{date}"
     return f"{user}\n\n{message}\n\n<a href='{difference['attachment_link']}'>{difference['attachment']}</a>\n\n{date}"
 
-"""
-{user} <br /> {msg} <br /> <a href={url}>{atachment_name}</a> <br /> {date}
-"""
