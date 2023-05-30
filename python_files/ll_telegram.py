@@ -13,7 +13,6 @@ def send_log(msg: str) -> None:
 
 def send_msg(formatted_difference: dict) -> str:
     # repair difference
-    return 'func started'
     difference = unempty_difference(formatted_difference=formatted_difference)
     # Prepare
     CHAT_IDs = chat_ids()
