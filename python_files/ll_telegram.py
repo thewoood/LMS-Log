@@ -11,15 +11,14 @@ def send_log(msg: str) -> None:
                 'chat_id': CHAT_ID,
                 })
 
-def send_msg(formatted_difference: dict) -> None:
+def send_msg(formatted_difference: dict) -> str:
     # repair difference
+    return 'func started'
     difference = unempty_difference(formatted_difference=formatted_difference)
-
     # Prepare
     CHAT_IDs = chat_ids()
     TOKEN = token()
     session = requests.Session()
-    
     # for difference in differences:
     for CHAT_ID in CHAT_IDs:
         for activity in difference:
@@ -30,8 +29,7 @@ def send_msg(formatted_difference: dict) -> None:
                 'chat_id': CHAT_ID,
                 'parse_mode': 'HTML'
                 })
-            with open('log.json', 'a+', encoding='utf-8') as file:
-                file.write(str(response.text))
+
             print(f'----Telegram , CHAT-ID: {CHAT_ID}: {response.status_code}----')
 
 def chat_ids() -> list:
