@@ -1,57 +1,38 @@
 
 import pickle
-# import requests
-import aiohttp, asyncio
+import requests
 from bs4 import BeautifulSoup
-import gzip
 
-# def get_page_html(url: str, cookies: pickle) -> list:
-#     session_requests = requests.session()
-#     session_requests.cookies.update(requests.utils.cookiejar_from_dict(cookies))
+def get_page_html(url: str, cookies: pickle) -> list:
+    session_requests = requests.session()
+    session_requests.cookies.update(requests.utils.cookiejar_from_dict(cookies))
     
-#     result = session_requests.get(
-#         url=url,
-#         headers=dict(referer=url),
-#     )
+    result = session_requests.get(
+        url=url,
+        headers=dict(referer=url),
+    )
     
-#     result.apparent_encoding
-#     return result
-async def get_page_html(session, url: str, cookies: pickle) -> str:
-    async with session.get(url, headers={'referer': url,}, cookies=cookies) as response:
-        if response.headers.get("Content-Encoding") == "gzip":
-            # Manually decompress the response content if it is gzip-encoded
-            content = await response.read()
-            try:
-                decompressed_content = gzip.decompress(content).decode("utf-8")
-            except gzip.BadGzipFile:
-                # The response content is not actually gzip-encoded, fallback to decoding as text
-                decompressed_content = content.decode("utf-8")
-            return decompressed_content
-        else:
-            # Response content is not gzip-encoded, decode as text
-            content = await response.text()
-            return content
-async def get_group_links(lms_homepage_url: str, cookies: pickle) -> list:
-    # home_page = get_page_html(url=lms_homepage_url, cookies=cookies)
-    async with aiohttp.ClientSession() as session:
-        home_page = await get_page_html(session=session, url=lms_homepage_url, cookies=cookies)
+    result.apparent_encoding
+    return result
+
+def get_group_links(lms_homepage_url: str, cookies: pickle) -> list:
+    home_page = get_page_html(url=lms_homepage_url, cookies=cookies)
     
     #Extract names of groups
-    soup = BeautifulSoup(home_page, 'html.parser')
+    soup = BeautifulSoup(home_page.text, 'html.parser')
     group_a_tags = soup.find('ul', id='profile_groups').find_all('a')
     group_names = [group_a_tag['href'] for group_a_tag in group_a_tags]
 
     return ['http://lms.ui.ac.ir' + group_name for group_name in group_names]
 
 
-async def get_lms_activities(group_url: str, css_selectors: dict, cookies: pickle) -> list[dict]:
+def get_lms_activities(group_url: str, css_selectors: dict, cookies: pickle) -> list[dict]:
 
     # Load page
-    # page_html = get_page_html(url=group_url, cookies=cookies)
-    async with aiohttp.ClientSession() as session:
-        page_html = await get_page_html(session=session, url=group_url, cookies=cookies)
-    # Exteact Cards 
-    soup = BeautifulSoup(page_html, 'html.parser')
+    page_html = get_page_html(url=group_url, cookies=cookies)
+    
+    # Exteact Cards
+    soup = BeautifulSoup(page_html.content, 'html.parser')
     msg_boxes = soup.select('.wall-action-item')
 
     activities = []
