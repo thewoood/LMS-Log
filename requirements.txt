@@ -38,3 +38,4 @@ Werkzeug==2.3.4
 wrapt==1.14.1
 aiohttp
 uvicorn
+fastapi
