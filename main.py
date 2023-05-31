@@ -1,9 +1,5 @@
 import os
-
-# from flask import Flask
-from typing import Any, Awaitable
 from fastapi import FastAPI
-import asyncio, aiohttp
 from python_files import ll_cookies, ll_json, ll_lms, ll_telegram
 from env import Set_Environ
 
@@ -95,24 +91,22 @@ async def main():
 
     formatted_differences = {}
 
-    async with aiohttp.ClientSession() as session:
-        tasks = []
-        for group_link in group_links:
-            task = scrape_url(
-                group_link=group_link,
-                css_selectors=css_selectors,
-                old_data=old_data,
-                cookies_pickle=cookies_pickle,
-            )
-            tasks.append(task)
-
-        results = await asyncio.gather(*tasks)
-
-    for result in results:
-        formatted_differences.update(result)
+    group_link = group_links[0]
+    formatted_difference = {}
+    for group_link in group_links:
+        new_data = ll_lms.get_lms_activities(group_link, css_selectors,cookies_pickle)
+        old_data_public_activity = old_data.get(group_link.split('/')[-1], {}).get('public_activity', [])
 
     # with open('log.json', 'w', encoding='utf-8') as file:
     #     file.write(str(formatted_differences))
+
+        difference = ll_lms.difference_of_activities(new_data=new_data, old_data=old_data_public_activity)
+        formatted_difference.update({group_link.split('/')[-1]:{'public_activity': difference}})
+
+    ll_telegram.send_msg(formatted_difference=formatted_difference)
+    merged_old_and_difference = ll_lms.merge_activities_old_and_difference(old_data=old_data,
+                                                                           difference=formatted_difference)
+
 
     ll_telegram.send_msg(formatted_difference=formatted_differences)
     merged_old_and_difference = ll_lms.merge_activities_old_and_difference(
@@ -124,8 +118,7 @@ async def main():
 
 app = FastAPI()
 
-
 @app.get("/")
 def root():
-    asyncio.run(main())
+    main()
     return "<h1>Hello</h1>"
