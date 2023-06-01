@@ -1,6 +1,6 @@
 import os
 from fastapi import FastAPI
-from python_files import ll_cookies, ll_json, ll_lms, ll_telegram
+from python_files import ll_cookies, ll_json, ll_telegram, ll_lms_crawl
 # from env import Set_Environ
 # Set_Environ()
 
@@ -16,7 +16,7 @@ def main():
     
     cookies_pickle = ll_cookies.download_cookies(file_name='cookies.pkl')
 
-    group_links = ll_lms.get_group_links('http://lms.ui.ac.ir/members/home', cookies=cookies_pickle)
+    group_links = ll_lms_crawl.public_activity('http://lms.ui.ac.ir/members/home', cookies=cookies_pickle)
 
     css_selectors = {'user': '.feed_item_username',
                      'message': '.feed_item_bodytext',
@@ -33,16 +33,16 @@ def main():
         group_name = group_link.split('/')[-1]
         ll_telegram.send_log(f'{group_name} 1. start')
 
-        new_data = ll_lms.get_lms_activities(group_link, css_selectors, cookies_pickle)
+        new_data = ll_lms_crawl.public_activity(group_link, css_selectors, cookies_pickle)
 
         old_data_public_activity = old_data.get(group_name, {}).get('public_activity', [])
 
-        difference = ll_lms.difference_of_activities(new_data=new_data, old_data=old_data_public_activity)
+        difference = ll_lms_crawl.difference_of_activities(new_data=new_data, old_data=old_data_public_activity)
         formatted_difference.update({group_name:{'public_activity': difference}})
         ll_telegram.send_log(f'{group_name} 4. finished')
     
     ll_telegram.send_msg(formatted_difference=formatted_difference)
-    merged_old_and_difference = ll_lms.merge_activities_old_and_difference(old_data=old_data,
+    merged_old_and_difference = ll_lms_crawl.merge_activities_old_and_difference(old_data=old_data,
                                                                            difference=formatted_difference)
     # Upload new data
     ll_json.upload_dict(file_name='data.json', content=merged_old_and_difference)
