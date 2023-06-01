@@ -31,8 +31,6 @@ def send_msg(formatted_difference: dict) -> None:
                 'chat_id': CHAT_ID,
                 'parse_mode': 'HTML'
                 })
-            with open('log.json', 'a+', encoding='utf-8') as file:
-                file.write(str(response.text))
             print(f'----Telegram , CHAT-ID: {CHAT_ID}: {response.status_code}----')
 
 def chat_ids() -> list:
@@ -50,9 +48,12 @@ def unempty_difference(formatted_difference: dict) -> list:
                 difference.append(activity)
     
     return difference  
+
 def prettify_msg(difference):
-    user = f"\N{BUST IN SILHOUETTE} {difference['user']}:"
-    message = f"\N{pencil} {difference['message']}"
-    date = f"\N{clock face two oclock}{difference['date']}"
-    return f"{user}\n\n{message}\n\n<a href='{difference['attachment_link']}'>{difference['attachment']}</a>\n\n{date}"
+    user = f'\N{BUST IN SILHOUETTE} {difference["user"]}:'
+    message = f'\N{pencil} {difference["message"]}'
+    attachment_url = difference['attachment_url']
+    attachment_text = difference['attachment_text']
+    date = f'\N{clock face two oclock} {difference["date"]}'
+    return f'{user}\n\n{message}\n\n<a href="{attachment_url}">{attachment_text}</a>\n\n{date}'
 

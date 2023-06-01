@@ -2,7 +2,7 @@
 import pickle
 import requests
 
-def get_page_html(url: str, cookies: pickle) -> list:
+def get_page_html(url: str, cookies: dict) -> list:
     session_requests = requests.session()
     session_requests.cookies.update(requests.utils.cookiejar_from_dict(cookies))
     

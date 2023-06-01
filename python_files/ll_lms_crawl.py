@@ -1,9 +1,8 @@
-from ll_lms_Msg_Box import Msg_Box
-from ll_lms_http import get_page_html
-import pickle
+from python_files.ll_lms_Msg_Box import Msg_Box
+from python_files.ll_lms_http import get_page_html
 from bs4 import BeautifulSoup
 
-def group_links(lms_homepage_url: str, cookies: pickle) -> list:
+def group_urls(lms_homepage_url: str, cookies: dict) -> list:
     '''Extract Name of lms groups'''
     home_page = get_page_html(url=lms_homepage_url, cookies=cookies)
     soup = BeautifulSoup(home_page.text, 'html.parser')
@@ -12,7 +11,7 @@ def group_links(lms_homepage_url: str, cookies: pickle) -> list:
     return ['http://lms.ui.ac.ir' + group_name for group_name in group_names]
 
 
-def public_activity(group_url: str, css_selectors: dict, cookies: pickle) -> list[dict]:
+def public_activity(group_url: str, css_selectors: dict, cookies: dict) -> list[dict]:
     '''Extract public messages'''
     page_html = get_page_html(url=group_url, cookies=cookies)
     soup = BeautifulSoup(page_html.content, 'html.parser')
@@ -33,6 +32,7 @@ def group_name_from_url(group_url: str) -> str:
     return group_url.split("/")[-1]
 
 def difference_of_activities(new_data: list, old_data: list) -> dict:
+
     difference = [new_row for new_row in new_data if new_row not in old_data]
     return difference
 
