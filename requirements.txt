@@ -39,3 +39,4 @@ wrapt==1.14.1
 aiohttp
 uvicorn
 fastapi
+
