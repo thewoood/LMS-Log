@@ -27,26 +27,23 @@ def main():
     old_data = ll_json.download_dict('data2.json')
 
     formatted_difference = {}
-    for group_link in group_links:
-        ll_telegram.send_log('1. start')
+    ll_telegram.send_log(f'{group_links}')
 
-        new_data = ll_lms.get_lms_activities(group_link, css_selectors,cookies_pickle)
-        ll_telegram.send_log('2. new data')
+    for group_link in group_links[:]:
+        group_name = group_link.split('/')[-1]
+        ll_telegram.send_log(f'{group_name} 1. start')
 
-        old_data_public_activity = old_data.get(group_link.split('/')[-1], {}).get('public_activity', [])
-        ll_telegram.send_log('3. old data')
+        new_data = ll_lms.get_lms_activities(group_link, css_selectors, cookies_pickle)
 
+        old_data_public_activity = old_data.get(group_name, {}).get('public_activity', [])
 
         difference = ll_lms.difference_of_activities(new_data=new_data, old_data=old_data_public_activity)
-        formatted_difference.update({group_link.split('/')[-1]:{'public_activity': difference}})
-        ll_telegram.send_log('4. formatted')
-
-        ll_telegram.send_log('5. finish')
+        formatted_difference.update({group_name:{'public_activity': difference}})
+        ll_telegram.send_log(f'{group_name} 4. finished')
+    
     ll_telegram.send_msg(formatted_difference=formatted_difference)
     merged_old_and_difference = ll_lms.merge_activities_old_and_difference(old_data=old_data,
                                                                            difference=formatted_difference)
-
-
     # Upload new data
     ll_json.upload_dict(file_name='data.json', content=merged_old_and_difference)
 

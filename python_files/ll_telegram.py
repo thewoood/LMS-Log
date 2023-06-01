@@ -13,14 +13,14 @@ def send_log(msg: str) -> None:
 
 def send_msg(formatted_difference: dict) -> None:
     # repair difference
-    return 'func started'
+    send_log(f'telegram send_msg')
+
     difference = unempty_difference(formatted_difference=formatted_difference)
 
     # Prepare
     CHAT_IDs = chat_ids()
     TOKEN = token()
     session = requests.Session()
-    
     # for difference in differences:
     for CHAT_ID in CHAT_IDs:
         for activity in difference:
