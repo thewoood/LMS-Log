@@ -1,5 +1,4 @@
 
-import pickle
 import requests
 
 def get_page_html(url: str, cookies: dict) -> list:
