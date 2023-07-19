@@ -11,7 +11,7 @@ def group_urls(lms_homepage_url: str, cookies: dict) -> list:
     return ['http://lms.ui.ac.ir' + group_name for group_name in group_names]
 
 
-def public_activity(group_url: str, css_selectors: dict, cookies: dict) -> list[dict]:
+async def public_activity(group_url: str, css_selectors: dict, cookies: dict) -> list[dict]:
     '''Extract public messages'''
     page_html = get_page_html(url=group_url, cookies=cookies)
     soup = BeautifulSoup(page_html.content, 'html.parser')
@@ -32,7 +32,6 @@ def group_name_from_url(group_url: str) -> str:
     return group_url.split("/")[-1]
 
 def difference_of_activities(new_data: list, old_data: list) -> dict:
-
     difference = [new_row for new_row in new_data if new_row not in old_data]
     return difference
 
