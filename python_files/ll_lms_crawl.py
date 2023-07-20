@@ -1,19 +1,19 @@
 from python_files.ll_lms_Msg_Box import Msg_Box
-from python_files.ll_lms_http import get_page_html
+from python_files.ll_http_requests import get_request
 from bs4 import BeautifulSoup
 
 def group_urls(lms_homepage_url: str, cookies: dict) -> list:
     '''Extract Name of lms groups'''
-    home_page = get_page_html(url=lms_homepage_url, cookies=cookies)
+    home_page = get_request(url=lms_homepage_url, cookies=cookies)
     soup = BeautifulSoup(home_page.text, 'html.parser')
     group_a_tags = soup.find('ul', id='profile_groups').find_all('a')
     group_names = [group_a_tag['href'] for group_a_tag in group_a_tags]
     return ['http://lms.ui.ac.ir' + group_name for group_name in group_names]
 
 
-async def public_activity(group_url: str, css_selectors: dict, cookies: dict) -> list[dict]:
+def public_activity(group_url: str, css_selectors: dict, cookies: dict) -> list[dict]:
     '''Extract public messages'''
-    page_html = get_page_html(url=group_url, cookies=cookies)
+    page_html = get_request(url=group_url, cookies=cookies)
     soup = BeautifulSoup(page_html.content, 'html.parser')
     msg_boxes = soup.select('.wall-action-item')
     activities = []

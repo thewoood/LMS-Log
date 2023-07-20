@@ -1,27 +1,33 @@
 import os
-from fastapi import FastAPI
-from python_files import ll_cookies, ll_json, ll_telegram, ll_lms_crawl
+import uvicorn
 import asyncio
+from fastapi import FastAPI
+from env import Set_Environ
+from tests.test import main as send_async_log
+Set_Environ()
+from python_files import ll_cookies, ll_json, ll_telegram, ll_lms_crawl
 
 def cookies() -> dict:
     lms_username = os.getenv('LMS_USERNAME')
     lms_password = os.getenv('LMS_PASSWORD')
 
-    cookies_dict = ll_cookies.upload_cookies(lms_username=lms_username, lms_password=lms_password,
-                              login_url='http://lms.ui.ac.ir/login', file_name='cookies.pkl')
-    # cookies_pickle = ll_cookies.download_cookies(file_name='cookies.pkl')
+    cookies_dict = ll_cookies.get_cookies(lms_username=lms_username, lms_password=lms_password,
+                                    login_url='http://lms.ui.ac.ir/login')
     return cookies_dict
 
-async def scrape_url(old_data: dict, group_url: str, css_selectors: dict, cookies_dict: dict) -> dict:
+def scrape_url(old_data: dict, group_url: str, css_selectors: dict, cookies_dict: dict) -> dict:
     group_name = ll_lms_crawl.group_name_from_url(group_url=group_url)
     ll_telegram.send_log(f'{group_name} 1. start')
-    new_data = await ll_lms_crawl.public_activity(group_url=group_url, css_selectors=css_selectors, cookies=cookies_dict)
+    new_data = ll_lms_crawl.public_activity(group_url=group_url, css_selectors=css_selectors, cookies=cookies_dict)
     old_data_public_activity = old_data.get(group_name, {}).get('public_activity', [])
     difference = ll_lms_crawl.difference_of_activities(new_data=new_data, old_data=old_data_public_activity)
     ll_telegram.send_log(f'{group_name} 4. finished')
     return {group_name:{'public_activity': difference}}
     
-async def main():
+def main():
+    # await send_async_log()
+    with open('log.log', 'w+') as log:
+        log.write('heelll')
     cookies_dict = cookies()
     css_selectors = {'user': '.feed_item_username',
                      'message': '.feed_item_bodytext',
@@ -32,11 +38,9 @@ async def main():
     
     GROUP_URLS = ll_lms_crawl.group_urls(lms_homepage_url='http://lms.ui.ac.ir/members/home', cookies=cookies_dict)
     old_data = ll_json.download_dict('data2.json')
-    
-    result = await asyncio.gather(*[scrape_url(old_data=old_data, group_url=group_url, 
-                    css_selectors=css_selectors, cookies_dict=cookies_dict) for group_url in GROUP_URLS])
-    
-    ll_telegram.send_log(str(result))
+
+    result = scrape_url(old_data=old_data, group_url=GROUP_URLS[0], 
+                    css_selectors=css_selectors, cookies_dict=cookies_dict)
     # for group_url in GROUP_URLS:
         # diff = scrape_url(old_data=old_data, group_url=group_url, 
         #            css_selectors=css_selectors, cookies_dict=cookies_dict)
@@ -47,13 +51,17 @@ async def main():
     #                                                                              difference=formatted_difference)
     # ll_json.upload_dict(file_name='data.json', content=merged_old_and_difference)
 
-from env import Set_Environ
-Set_Environ()
 app = FastAPI()
 @app.get('/')
 def root():
     try:
+       ll_telegram.send_log('DAMN1')
        asyncio.run(main())
     except BaseException as e:
+        with open('log.log', 'w+') as log:
+            log.write(str(e))
         ll_telegram.send_log(str(e))
     return "<h1>Hello</h1>"
+
+if __name__ == '__main__':
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)

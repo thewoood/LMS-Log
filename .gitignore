@@ -14,3 +14,4 @@ env.py
 Spacefile
 __pycache__
 log.json
+log.log

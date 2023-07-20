@@ -1,15 +1,30 @@
-import requests
 import os
+import asyncio
+import requests
+from python_files.ll_http_requests import post_async_request
 
-def send_log(msg: str) -> None:
-    CHAT_ID = chat_ids()[0]
+def send_log(msg: str) -> list[requests.Response]:
+    CHAT_IDs = chat_ids()
     TOKEN = token()
-    session = requests.Session()
     telegram_url = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
-    response = session.post(telegram_url, json={
-                'text': msg,                
-                'chat_id': CHAT_ID,
-                })
+    print('sending shit')
+    response = requests.post(url=telegram_url, json={'text': msg,
+                                 'chat_id': CHAT_IDs[0]})
+
+    return response
+
+async def send_async_log(msg: str) -> list[requests.Response]:
+    CHAT_IDs = chat_ids()
+    TOKEN = token()
+    telegram_url = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
+
+    responses = []
+    for chat_id in CHAT_IDs:
+        response = await post_async_request(
+            url=telegram_url, _json={'text': msg,
+                                 'chat_id': chat_id})
+        responses.append(response)
+    return responses
 
 def send_msg(formatted_difference: dict) -> None:
     # repair difference
