@@ -3,11 +3,14 @@ import requests
 import asyncio
 import aiohttp
 
-async def aio_get_request(url: str, delay: int):
-    await asyncio.sleep(delay)
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            return [response, delay]
+async def aio_get_request(session: aiohttp.ClientResponse, url: str):
+    async with session.get(url) as response:
+        return response
+
+async def aio_post_request(session: aiohttp.ClientSession, url: str, 
+                           payload: dict) -> aiohttp.ClientResponse:
+    async with session.post(url, data = payload) as response:
+        return response
         
 def get_request(url: str, cookies: dict=None) -> requests.Response:
     with requests.Session() as session:

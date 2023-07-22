@@ -1,7 +1,8 @@
 import os
 import asyncio
+import aiohttp
 import requests
-from python_files.ll_http_requests import post_async_request
+from python_files.ll_http_requests import aio_post_request
 
 def send_log(msg: str) -> list[requests.Response]:
     CHAT_IDs = chat_ids()
@@ -13,18 +14,18 @@ def send_log(msg: str) -> list[requests.Response]:
 
     return response
 
-async def send_async_log(msg: str) -> list[requests.Response]:
+async def send_async_log(session: aiohttp.ClientSession, msg: str) -> list[requests.Response]:
     CHAT_IDs = chat_ids()
     TOKEN = token()
     telegram_url = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
 
-    # responses = []
-    for chat_id in CHAT_IDs:
-        response = await asyncio.create_task(post_async_request(
-            url=telegram_url, _json={'text': msg,
-                                 'chat_id': chat_id}))
-        responses.append(response)
-    return responses
+    senders = [aio_post_request(session = session, url=telegram_url,
+                                payload={'text': msg, 'chat_id': chat_id})
+                                for chat_id in CHAT_IDs]
+    
+    return await asyncio.gather(*senders, return_exceptions=True)
+    # for finished_task in asyncio.as_completed(senders):
+    #     await finished_task
 
 def send_msg(formatted_difference: dict) -> None:
     # repair difference
