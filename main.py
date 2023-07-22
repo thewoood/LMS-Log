@@ -1,9 +1,10 @@
 import os
+import time
 import uvicorn
 import asyncio
 from fastapi import FastAPI
 from env import Set_Environ
-from tests.test import main as send_async_log
+from tests.test import test_get_async_request
 Set_Environ()
 from python_files import ll_cookies, ll_json, ll_telegram, ll_lms_crawl
 
@@ -24,10 +25,12 @@ def scrape_url(old_data: dict, group_url: str, css_selectors: dict, cookies_dict
     ll_telegram.send_log(f'{group_name} 4. finished')
     return {group_name:{'public_activity': difference}}
     
-def main():
-    # await send_async_log()
-    with open('log.log', 'w+') as log:
-        log.write('heelll')
+async def main():
+    start = time.time()
+    await asyncio.create_task(test_get_async_request())
+    end = time.time()
+    ll_telegram.send_log(f'took {end-start:.6} seconds')
+
     cookies_dict = cookies()
     css_selectors = {'user': '.feed_item_username',
                      'message': '.feed_item_bodytext',
@@ -55,11 +58,8 @@ app = FastAPI()
 @app.get('/')
 def root():
     try:
-       ll_telegram.send_log('DAMN1')
        asyncio.run(main())
     except BaseException as e:
-        with open('log.log', 'w+') as log:
-            log.write(str(e))
         ll_telegram.send_log(str(e))
     return "<h1>Hello</h1>"
 

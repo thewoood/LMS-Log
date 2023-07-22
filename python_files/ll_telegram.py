@@ -18,11 +18,11 @@ async def send_async_log(msg: str) -> list[requests.Response]:
     TOKEN = token()
     telegram_url = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
 
-    responses = []
+    # responses = []
     for chat_id in CHAT_IDs:
-        response = await post_async_request(
+        response = await asyncio.create_task(post_async_request(
             url=telegram_url, _json={'text': msg,
-                                 'chat_id': chat_id})
+                                 'chat_id': chat_id}))
         responses.append(response)
     return responses
 
@@ -56,6 +56,8 @@ def token() -> str:
     return os.getenv('TEL_BOT_TOKEN')
 
 def unempty_difference(formatted_difference: dict) -> list:
+    '''returns a list of activities that are unmepty
+    '''
     difference = []
     for key in formatted_difference.keys():
         if formatted_difference[key]['public_activity'] != []:
