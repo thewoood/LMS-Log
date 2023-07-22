@@ -1,5 +1,5 @@
 from python_files.ll_lms_Msg_Box import Msg_Box
-from python_files.ll_http_requests import get_request
+# from python_files.ll_http_requests import get_request
 from bs4 import BeautifulSoup
 
 def group_urls(lms_homepage_url: str, cookies: dict) -> list:

@@ -2,6 +2,7 @@ import os
 import asyncio
 from aiohttp import ClientSession
 import requests
+import datetime
 from python_files.ll_http_requests import aio_post_request
 
 def chat_ids() -> list:
@@ -11,13 +12,19 @@ def chat_ids() -> list:
 def token() -> str:
     return os.getenv('TEL_BOT_TOKEN')
 
-async def send_async_log(session: ClientSession, 
-                         msg: str) -> list[ClientSession]:
+async def send_async_log(session: ClientSession = None,
+                         msg: str = '') -> list[ClientSession]:
     CHAT_IDs = chat_ids()
     TOKEN = token()
     telegram_url = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
-
-    senders = [aio_post_request(session = session, url=telegram_url,
+    msg = f'[{datetime.datetime.now().isoformat()}]\n\n' + msg
+    if session:
+        senders = [aio_post_request(session = session, url=telegram_url,
+                                payload={'text': msg, 'chat_id': chat_id})
+                                for chat_id in CHAT_IDs]
+    else:
+        async with ClientSession() as _session:
+            senders = [aio_post_request(session = _session, url=telegram_url,
                                 payload={'text': msg, 'chat_id': chat_id})
                                 for chat_id in CHAT_IDs]
     

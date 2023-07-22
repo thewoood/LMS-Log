@@ -2,18 +2,23 @@ import os
 import time
 import uvicorn
 import asyncio
+import aiohttp
 from fastapi import FastAPI
 from env import Set_Environ
-from tests.test import test_get_async_request
 Set_Environ()
 from python_files import ll_cookies, ll_json, ll_telegram, ll_lms_crawl
 
-def cookies() -> dict:
+async def cookies(session: aiohttp.ClientSession) -> dict:
     lms_username = os.getenv('LMS_USERNAME')
     lms_password = os.getenv('LMS_PASSWORD')
 
-    cookies_dict = ll_cookies.get_cookies(lms_username=lms_username, lms_password=lms_password,
-                                    login_url='http://lms.ui.ac.ir/login')
+    # cookies_dict = ll_cookies.get_cookies(lms_username=lms_username, lms_password=lms_password,
+                                    # login_url='http://lms.ui.ac.ir/login')
+    cookies_dict = await ll_cookies.get_async_cookies(
+               session, lms_username=lms_username, 
+               lms_password=lms_password, 
+               login_url='http://lms.ui.ac.ir/login')
+           
     return cookies_dict
 
 def scrape_url(old_data: dict, group_url: str, css_selectors: dict, cookies_dict: dict) -> dict:
@@ -26,24 +31,24 @@ def scrape_url(old_data: dict, group_url: str, css_selectors: dict, cookies_dict
     return {group_name:{'public_activity': difference}}
     
 async def main():
-    start = time.time()
-    await asyncio.create_task(test_get_async_request())
-    end = time.time()
-    ll_telegram.send_log(f'took {end-start:.6} seconds')
-
-    cookies_dict = cookies()
+    async with aiohttp.ClientSession() as session:
+        cookies_dict = await cookies(session)
+        await ll_telegram.send_async_log(session=session, msg='main func, cookies: ' + str(cookies_dict))
     css_selectors = {'user': '.feed_item_username',
                      'message': '.feed_item_bodytext',
                      'attachment': '.feed_item_attachments',
                      'date': '.timestamp',
-                     }
+                    }
     formatted_difference = {}
     
-    GROUP_URLS = ll_lms_crawl.group_urls(lms_homepage_url='http://lms.ui.ac.ir/members/home', cookies=cookies_dict)
+    # GROUP_URLS = ll_lms_crawl.group_urls(lms_homepage_url='http://lms.ui.ac.ir/members/home', cookies=cookies_dict)
     old_data = ll_json.download_dict('data2.json')
 
-    result = scrape_url(old_data=old_data, group_url=GROUP_URLS[0], 
-                    css_selectors=css_selectors, cookies_dict=cookies_dict)
+    # result = scrape_url(old_data=old_data, group_url=GROUP_URLS[0], 
+    #                 css_selectors=css_selectors, cookies_dict=cookies_dict)
+
+
+    
     # for group_url in GROUP_URLS:
         # diff = scrape_url(old_data=old_data, group_url=group_url, 
         #            css_selectors=css_selectors, cookies_dict=cookies_dict)
@@ -56,11 +61,13 @@ async def main():
 
 app = FastAPI()
 @app.get('/')
-def root():
+async def root():
     try:
-       asyncio.run(main())
+        await main()
     except BaseException as e:
-        ll_telegram.send_log(str(e))
+        with open('log.log', 'w+') as log:
+            log.write(str(e))
+        await ll_telegram.send_async_log(msg=str(e))
     return "<h1>Hello</h1>"
 
 if __name__ == '__main__':

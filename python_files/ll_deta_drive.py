@@ -1,6 +1,5 @@
 from deta import Deta
 from typing import Any
-import os
 
 deta = Deta()
 deta_drive = deta.Drive('My_Storage')
