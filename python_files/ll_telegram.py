@@ -1,20 +1,18 @@
 import os
 import asyncio
-import aiohttp
+from aiohttp import ClientSession
 import requests
 from python_files.ll_http_requests import aio_post_request
 
-def send_log(msg: str) -> list[requests.Response]:
-    CHAT_IDs = chat_ids()
-    TOKEN = token()
-    telegram_url = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
-    print('sending shit')
-    response = requests.post(url=telegram_url, json={'text': msg,
-                                 'chat_id': CHAT_IDs[0]})
+def chat_ids() -> list:
+    CHAT_IDs_env = os.getenv('CHAT_IDs')
+    return CHAT_IDs_env.split(',')
 
-    return response
+def token() -> str:
+    return os.getenv('TEL_BOT_TOKEN')
 
-async def send_async_log(session: aiohttp.ClientSession, msg: str) -> list[requests.Response]:
+async def send_async_log(session: ClientSession, 
+                         msg: str) -> list[ClientSession]:
     CHAT_IDs = chat_ids()
     TOKEN = token()
     telegram_url = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
@@ -24,12 +22,10 @@ async def send_async_log(session: aiohttp.ClientSession, msg: str) -> list[reque
                                 for chat_id in CHAT_IDs]
     
     return await asyncio.gather(*senders, return_exceptions=True)
-    # for finished_task in asyncio.as_completed(senders):
-    #     await finished_task
 
 def send_msg(formatted_difference: dict) -> None:
     # repair difference
-    send_log(f'telegram send_msg')
+    send_async_log(f'telegram send_msg')
 
     difference = unempty_difference(formatted_difference=formatted_difference)
 
@@ -49,12 +45,6 @@ def send_msg(formatted_difference: dict) -> None:
                 })
             print(f'----Telegram , CHAT-ID: {CHAT_ID}: {response.status_code}----')
 
-def chat_ids() -> list:
-    CHAT_IDs_env = os.getenv('CHAT_IDs')
-    return CHAT_IDs_env.split(',')
-
-def token() -> str:
-    return os.getenv('TEL_BOT_TOKEN')
 
 def unempty_difference(formatted_difference: dict) -> list:
     '''returns a list of activities that are unmepty

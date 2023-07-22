@@ -1,6 +1,4 @@
 
-import requests
-import asyncio
 import aiohttp
 
 async def aio_get_request(session: aiohttp.ClientResponse, url: str):
