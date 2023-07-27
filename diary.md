@@ -56,3 +56,17 @@ then recusive private message reading
 ## TODO
 
 1: Find the maximum lifetime of cookies.
+
+
+# 27/7/2023
+
+i have two option:
+1- work with cookies
+2- not work with cookied
+
+1- if i work, 
+
+
+=============
+if aio.session.response.history is not none:
+    redirect from lms/memebers/home has occured

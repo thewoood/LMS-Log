@@ -1,7 +1,7 @@
 import pickle
 import requests
 import aiohttp
-from python_files import ll_deta_drive, ll_telegram
+from python_files import  ll_telegram
 
 def get_cookies(lms_username: str, lms_password: str, login_url: str) -> dict:
     with requests.Session() as session:
@@ -22,7 +22,7 @@ def get_cookies(lms_username: str, lms_password: str, login_url: str) -> dict:
     
     return cookies_dict
 
-async def get_async_cookies(session: aiohttp.ClientSession, 
+async def login_async(session: aiohttp.ClientSession, 
                             lms_username: str, lms_password: str, 
                             login_url: str) -> dict:
     payload = {
@@ -31,10 +31,7 @@ async def get_async_cookies(session: aiohttp.ClientSession,
     }
     async with session.post(url=login_url, data=payload,
                             headers={'referer': login_url}) as response:
-        await ll_telegram.send_async_log(session=session, msg=f'COOKIES POST REQUEST. STATUS: {response.status}')
-        cookies_dict = response.headers.get('Set-Cookie')
-
-    return cookies_dict
+        await ll_telegram.send_async_log(session=session, msg=f'LOGIN. STATUS: {response.status}')
 
 def upload_cookies(cookies_dict: dict, file_name: str) -> None:
     cookies_pickle = pickle.dumps(cookies_dict)

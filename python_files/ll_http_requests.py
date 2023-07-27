@@ -1,7 +1,7 @@
 
 import aiohttp
 
-async def aio_get_request(session: aiohttp.ClientResponse, url: str):
+async def aio_get_request(session: aiohttp.ClientSession, url: str):
     async with session.get(url) as response:
         return response
 
