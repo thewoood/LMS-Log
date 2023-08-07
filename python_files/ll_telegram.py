@@ -18,21 +18,22 @@ async def send_async_log(session: ClientSession = None,
     TOKEN = token()
     telegram_url = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
     msg = f'[{datetime.datetime.now().isoformat()}]\n\n' + msg
-    if session:
-        senders = [aio_post_request(session = session, url=telegram_url,
-                                payload={'text': msg, 'chat_id': chat_id})
+    if session is not None:
+        senders = [asyncio.create_task(aio_post_request(session = session, url=telegram_url,
+                                payload={'text': msg, 'chat_id': chat_id}))
                                 for chat_id in CHAT_IDs]
     else:
         async with ClientSession() as _session:
-            senders = [aio_post_request(session = _session, url=telegram_url,
-                                payload={'text': msg, 'chat_id': chat_id})
+            senders = [asyncio.create_task(aio_post_request(session = _session, url=telegram_url,
+                                payload={'text': msg, 'chat_id': chat_id}))
                                 for chat_id in CHAT_IDs]
     
-    return await asyncio.gather(*senders, return_exceptions=True)
+            return await asyncio.gather(*senders)
+    return await asyncio.gather(*senders)
 
-def send_msg(formatted_difference: dict) -> None:
+async def send_msg(session: ClientSession, formatted_difference: dict) -> None:
     # repair difference
-    send_async_log(f'telegram send_msg')
+    # await send_async_log(f'telegram send_msg')
 
     difference = unempty_difference(formatted_difference=formatted_difference)
 
@@ -41,17 +42,20 @@ def send_msg(formatted_difference: dict) -> None:
     TOKEN = token()
     session = requests.Session()
     # for difference in differences:
+    telegram_url = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
+    senders = []
     for CHAT_ID in CHAT_IDs:
         for activity in difference:
             msg = prettify_msg(activity)
-            telegram_url = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
-            response = session.post(telegram_url, json={
-                'text': msg,                
-                'chat_id': CHAT_ID,
-                'parse_mode': 'HTML'
-                })
-            print(f'----Telegram , CHAT-ID: {CHAT_ID}: {response.status_code}----')
-
+            senders.append(asyncio.create_task(
+                aio_post_request(session=session, url=telegram_url,
+                                 payload={
+                                        'text': msg,                
+                                        'chat_id': CHAT_ID,
+                                        'parse_mode': 'HTML'
+                                        })))
+            # print(f'----Telegram , CHAT-ID: {CHAT_ID}: {response.status_code}----')
+    await asyncio.gather(*senders)
 
 def unempty_difference(formatted_difference: dict) -> list:
     '''returns a list of activities that are unmepty

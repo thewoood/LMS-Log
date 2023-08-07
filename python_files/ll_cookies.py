@@ -10,13 +10,11 @@ def get_cookies(lms_username: str, lms_password: str, login_url: str) -> dict:
         "password": lms_password,
         }
 
-        ll_telegram.send_log('MADE SESSION TO GET COOKIES')
         response = session.post(
             url=login_url,
             data=payload,
             headers=dict(referer=login_url)
         )
-        ll_telegram.send_log(f'POST REQUEST MADE. STATUS: {response.status_code}')
         print(f'----{login_url}: {response.status_code}----')
         cookies_dict = requests.utils.dict_from_cookiejar(session.cookies)
     
@@ -31,7 +29,7 @@ async def login_async(session: aiohttp.ClientSession,
     }
     async with session.post(url=login_url, data=payload,
                             headers={'referer': login_url}) as response:
-        await ll_telegram.send_async_log(session=session, msg=f'LOGIN. STATUS: {response.status}')
+        pass
 
 def upload_cookies(cookies_dict: dict, file_name: str) -> None:
     cookies_pickle = pickle.dumps(cookies_dict)
