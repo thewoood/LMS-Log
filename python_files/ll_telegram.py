@@ -55,7 +55,7 @@ async def send_msg(session: ClientSession, formatted_difference: dict) -> None:
                                         'parse_mode': 'HTML'
                                         })))
             # print(f'----Telegram , CHAT-ID: {CHAT_ID}: {response.status_code}----')
-    await asyncio.gather(*senders)
+    await asyncio.gather(*senders, return_exceptions=True)
 
 def unempty_difference(formatted_difference: dict) -> list:
     '''returns a list of activities that are unmepty

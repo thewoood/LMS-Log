@@ -9,8 +9,8 @@ def upload_dict(content: dict, file_name: str) -> str:
     return upload_result
 
 def download_dict(file_name: str) -> dict:
+
     raw_content = ll_deta_drive.download_file(file_name)
-    # ll_deta_drive checks emptieness and availablity of file
     content = json.loads(json.load(raw_content))
-    
+
     return dict(content)

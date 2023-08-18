@@ -47,6 +47,6 @@ class Msg_Box():
             'attachment_text': attachment_text,
             'attachment_url': attachment_url,
             'date': time,
-               }
+        }
 
         return msg
