@@ -1,7 +1,8 @@
 from bs4 import BeautifulSoup
 
 class Msg_Box():
-    def __init__(self, sub_soup: BeautifulSoup, css_selectors: dict) -> None:
+    def __init__(self, sub_soup: BeautifulSoup, css_selectors: dict, group: str) -> None:
+        self.group = group
         self.sub_soup = sub_soup
         self.css_selectors = css_selectors
 
@@ -42,6 +43,8 @@ class Msg_Box():
         time = self.slct_time()
 
         msg = {
+            'group': group,
+            'type': 'public_activity', 
             'user': user,
             'message': message,
             'attachment_text': attachment_text,

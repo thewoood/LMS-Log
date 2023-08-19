@@ -1,8 +1,8 @@
-from python_files.ll_lms_Msg_Box import Msg_Box
-# from python_files.ll_http_requests import get_request
-from .ll_http_requests import aio_get_request
 from bs4 import BeautifulSoup
 from aiohttp import ClientSession
+
+from python_files.ll_lms_Msg_Box import Msg_Box
+from .ll_http_requests import aio_get_request
 
 async def fetch_compare_public_activity(session: ClientSession, old_data: dict,
                               group_url: str, css_selectors: dict) -> dict:
@@ -22,13 +22,13 @@ async def public_activity_async(session: ClientSession, group_url: str,
     soup = BeautifulSoup(page_html_content, 'html.parser')
     msg_boxes = soup.select('.wall-action-item')
     activities = []
+    group_name = group_name_from_url(group_url=group_url)
     for msg_box in msg_boxes:
         html = msg_box.prettify()
         sub_soup = BeautifulSoup(html, 'html.parser')
-        class_msg_box = Msg_Box(sub_soup=sub_soup, css_selectors=css_selectors)
+        class_msg_box = Msg_Box(sub_soup=sub_soup, css_selectors=css_selectors, group=group_name)
         activities.append(class_msg_box.setup_msg())
     
-    group_name = group_name_from_url(group_url=group_url)
     print(f'{group_name}: {len(activities)} MESSAGES - LMS')
     return activities
 

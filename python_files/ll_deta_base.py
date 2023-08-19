@@ -26,25 +26,13 @@ async def put_many(data: list) -> dict:
     responses = asyncio.gather(*putters)
     return responses
 
-async def fetch(query) -> dict:
+async def fetch(query: dict) -> list:
     response = await db.fetch(query=query)
-    return response    
+    return response.items 
 
-# Public Activity Query
-def get_public_activity_query(group: str, user: str, message: str, attachment_text: str,
-          attachment_url: str, date: str) -> str:
-    """
-    Makes Public Activity Query to fetch related data
-    """
-    query_dict = {
-        'group': group,
-        'type': 'public_activity', 
-        'user': user,
-        'message': message,
-        'attachment_text': attachment_text,
-        'attachment_url': attachment_url,
-        'date': date
-    }
-        
-    
-    return query_dict
+async def exists_in_base(query: dict) -> bool:
+    '''
+    validates the existence of a query in deta base
+    '''
+    response = await fetch(query)
+    return bool(response)
