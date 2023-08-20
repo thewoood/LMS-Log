@@ -31,11 +31,27 @@ async def send_async_log(session: ClientSession = None,
             return await asyncio.gather(*senders)
     return await asyncio.gather(*senders)
 
-async def send_msg(session: ClientSession, new_activity: list) -> None:
-    # repair difference
-    # await send_async_log(f'telegram send_msg')
 
-    # difference = unempty_difference(formatted_difference=formatted_difference)
+async def send_sigle_msg(session: ClientSession, message: str) -> None:
+    
+    CHAT_IDs = chat_ids()
+    TOKEN = token()
+    session = requests.Session()
+    # for difference in differences:
+    telegram_url = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
+    senders = []
+    for CHAT_ID in CHAT_IDs:
+        task = asyncio.create_task(
+                aio_post_request(session=session, url=telegram_url,
+                                payload={
+                                        'text': message,                
+                                        'chat_id': CHAT_ID,
+                                        'parse_mode': 'HTML'
+                                }))
+        senders.insert(0, task)
+    await asyncio.gather(*senders, return_exceptions=True)
+async def send_msg_list(session: ClientSession, new_activity: list) -> None:
+
     difference = new_activity
     # Prepare
     CHAT_IDs = chat_ids()
@@ -59,7 +75,7 @@ async def send_msg(session: ClientSession, new_activity: list) -> None:
             )
             # print(f'----Telegram , CHAT-ID: {CHAT_ID}: {response.status_code}----')
     if len(senders) > 15:
-        msg = ' با توجه به بالا بودن تعداد پیام های جدید و گروه های فعال، ممکن است deta space صرفا بخشی از پیام ها را ارسال کند.'
+        msg = f' با توجه به بالا بودن تعداد پیام های جدید و گروه های فعال(مجموعا {len(senders)} پیام)، ممکن است deta space صرفا بخشی از پیام ها را ارسال کند.'
         for CHAT_ID in CHAT_IDs:
             task = asyncio.create_task(
                     aio_post_request(session=session, url=telegram_url,

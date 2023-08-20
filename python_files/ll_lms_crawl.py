@@ -1,18 +1,15 @@
 from bs4 import BeautifulSoup
 from aiohttp import ClientSession
-import asyncio
 
 from python_files.ll_lms_Msg_Box import Msg_Box
 from .ll_http_requests import aio_get_request
 from .ll_deta_base import list_of_dicts_exists_in_base
-from .ll_telegram import send_msg
 
 async def process_activity(session: ClientSession, group_url: str, 
                        css_selectors: dict) -> list[dict]:
     fetched_activity = await public_activity_async(session=session, group_url=group_url,
                                                css_selectors=css_selectors)
     new_activity = await list_of_dicts_exists_in_base(fetched_activity)
-
     return new_activity
 
 async def public_activity_async(session: ClientSession, group_url: str,

@@ -1,9 +1,6 @@
 import os
-import time
-import json
 import uvicorn
 import asyncio
-from aiohttp import ClientSession
 import aiohttp
 from fastapi import FastAPI
 # from env import Set_Environ
@@ -38,21 +35,23 @@ async def main():
 
         allinone_results = [activity for group_activity in results for activity in group_activity]
 
+        first_time_user = await ll_deta_base.detabase_is_empty() 
         await ll_deta_base.put_many(allinone_results)
-            
-        await ll_telegram.send_msg(session=session, new_activity=allinone_results)
+        if first_time_user and len(allinone_results)>0:
+            message = f'LMS-Log v0.4.0a\nتعداد {len(allinone_results)} پیام در سامانه ال‌ام‌اس پردازش شد و ربات آماده است.'
+            await ll_telegram.send_sigle_msg(session=session, message=message)
+        else:
+            await ll_telegram.send_msg_list(session=session, new_activity=allinone_results)
 
 app = FastAPI()
+@app.post('/__space/v0/actions')
 @app.get('/')
 async def root():
     try:
         await main()
     except Exception as e:
-        with open('log.log', 'w+') as log:
-            log.write(str(e))
-        await ll_telegram.send_async_log(msg=str(e))
-        raise e
-    return "<h1>Hello</h1>"
+        return f"<h1>Error!\n{e}</h1>"
+    return "<h1>DONE!</h1>"
 
 if __name__ == '__main__':
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)

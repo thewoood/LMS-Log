@@ -30,6 +30,10 @@ async def fetch(query: dict) -> list:
     response = await db.fetch(query=query)
     return response.items 
 
+async def detabase_is_empty() -> bool:
+    response = await db.fetch(limit=1)
+    return len(response.items) < 1
+
 async def dict_exists_in_base(query: dict) -> dict:
     '''
     validates the existence of a query in deta base
