@@ -31,12 +31,12 @@ async def send_async_log(session: ClientSession = None,
             return await asyncio.gather(*senders)
     return await asyncio.gather(*senders)
 
-async def send_msg(session: ClientSession, formatted_difference: dict) -> None:
+async def send_msg(session: ClientSession, new_activity: list) -> None:
     # repair difference
     # await send_async_log(f'telegram send_msg')
 
-    difference = unempty_difference(formatted_difference=formatted_difference)
-
+    # difference = unempty_difference(formatted_difference=formatted_difference)
+    difference = new_activity
     # Prepare
     CHAT_IDs = chat_ids()
     TOKEN = token()
@@ -44,8 +44,8 @@ async def send_msg(session: ClientSession, formatted_difference: dict) -> None:
     # for difference in differences:
     telegram_url = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
     senders = []
-    for CHAT_ID in CHAT_IDs:
-        for activity in difference:
+    for activity in difference:
+        for CHAT_ID in CHAT_IDs:
             msg = prettify_msg(activity)
             senders.append(asyncio.create_task(
                 aio_post_request(session=session, url=telegram_url,
@@ -53,26 +53,29 @@ async def send_msg(session: ClientSession, formatted_difference: dict) -> None:
                                         'text': msg,                
                                         'chat_id': CHAT_ID,
                                         'parse_mode': 'HTML'
-                                        })))
+                                }
+                )
+            )
+            )
             # print(f'----Telegram , CHAT-ID: {CHAT_ID}: {response.status_code}----')
+    if len(senders) > 15:
+        msg = ' با توجه به بالا بودن تعداد پیام های جدید و گروه های فعال، ممکن است deta space صرفا بخشی از پیام ها را ارسال کند.'
+        for CHAT_ID in CHAT_IDs:
+            task = asyncio.create_task(
+                    aio_post_request(session=session, url=telegram_url,
+                                    payload={
+                                            'text': msg,                
+                                            'chat_id': CHAT_ID,
+                                            'parse_mode': 'HTML'
+                                    }))
+            senders.insert(0, task)
     await asyncio.gather(*senders, return_exceptions=True)
 
-def unempty_difference(formatted_difference: dict) -> list:
-    '''returns a list of activities that are unmepty
-    '''
-    difference = []
-    for key in formatted_difference.keys():
-        if formatted_difference[key]['public_activity'] != []:
-            for activity in formatted_difference[key]['public_activity']:
-                difference.append(activity)
-    
-    return difference  
-
 def prettify_msg(difference):
-    user = f'\N{BUST IN SILHOUETTE} {difference["user"]}:'
-    message = f'\N{pencil} {difference["message"]}'
-    attachment_url = difference['attachment_url']
-    attachment_text = difference['attachment_text']
-    date = f'\N{clock face two oclock} {difference["date"]}'
+    user = f'\N{BUST IN SILHOUETTE} {difference["user"]}:' if difference['user'] != 'LmsLogNone' else ''
+    message = f'\N{pencil} {difference["message"]}' if difference['message'] != 'LmsLogNone' else ''
+    attachment_url = difference['attachment_url'] if difference['attachment_url'] != 'LmsLogNone' else ''
+    attachment_text = difference['attachment_text'] if difference['attachment_text'] != 'LmsLogNone' else ''
+    date = f'\N{clock face two oclock} {difference["date"]}' if difference['date'] != 'LmsLogNone' else ''
     return f'{user}\n\n{message}\n\n<a href="{attachment_url}">{attachment_text}</a>\n\n{date}'
 
