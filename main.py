@@ -35,9 +35,10 @@ async def main():
 
         allinone_results = [activity for group_activity in results for activity in group_activity]
 
-        first_time_user = await ll_deta_base.detabase_is_empty() 
+        empty = await ll_deta_base.detabase_is_empty() 
         await ll_deta_base.put_many(allinone_results)
-        if first_time_user and len(allinone_results)>0:
+        if empty:
+            await ll_deta_base.put({'state': 'initialized'})
             message = f'LMS-Log v0.4.0a\nتعداد {len(allinone_results)} پیام در سامانه ال‌ام‌اس پردازش شد و ربات آماده است.'
             await ll_telegram.send_sigle_msg(session=session, message=message)
         else:
