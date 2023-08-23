@@ -9,3 +9,5 @@ __pycache__
 tests
 diary.md
 Discovery.md
+.env
+oldrequirements.txt

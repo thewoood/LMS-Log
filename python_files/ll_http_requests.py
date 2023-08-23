@@ -14,3 +14,15 @@ async def aio_post_request(session: aiohttp.ClientSession, url: str,
         if text:
             return await response.text()
         return response
+
+
+async def login_async(session: aiohttp.ClientSession, 
+                            lms_username: str, lms_password: str, 
+                            login_url: str) -> dict:
+    payload = {
+        'username': lms_username,
+        'password': lms_password
+    }
+    async with session.post(url=login_url, data=payload,
+                            headers={'referer': login_url}) as response:
+        pass

@@ -1,16 +1,14 @@
 import os
-import uvicorn
 import asyncio
 import aiohttp
 from fastapi import FastAPI
-# from env impo
+from python_files import ll_http_requests ,ll_deta_base, ll_telegram, ll_lms_crawl
 
-from python_files import ll_cookies, ll_deta_base, ll_telegram, ll_lms_crawl
 
 async def main():
     async with aiohttp.ClientSession() as session:
         # Login to save Cookies
-        cookies_dict = await ll_cookies.login_async(session=session,
+        cookies_dict = await ll_http_requests.login_async(session=session,
                                         lms_username=os.getenv('LMS_USERNAME'),
                                         lms_password=os.getenv('LMS_PASSWORD'),
                                         login_url='http://lms.ui.ac.ir/login')
@@ -48,15 +46,12 @@ async def main():
             await ll_telegram.send_msg_list(session=session, new_activity=allinone_results)
 
 app = FastAPI()
-@app.post('/__space/v0/aucctions')
+@app.post('/__space/v0/actions')
 @app.get('/')
-async def root():
+def root():
     try:
-        await main()
+        asyncio.run(main())
     except Exception as e:
-        await ll_telegram.send_async_log(msg=f'{str(e)}\nBy: {os.getenv("LMS_USERNAME")}', msg_type='ERROR')
+        asyncio.run(ll_telegram.send_async_log(msg=f'{str(e)}\nBy: {os.getenv("LMS_USERNAME")}', msg_type='ERROR'))
         return f"<h1>Error!\n{e}</h1>"
     return "<h1>DONE!</h1>"
-
-if __name__ == '__main__':
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)

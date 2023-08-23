@@ -1,9 +1,9 @@
 import os
 import asyncio
 from aiohttp import ClientSession
-import requests
 import datetime
 from python_files.ll_http_requests import aio_post_request
+from python_files.ll_lms_Activity_Box import EMPTY_PLACE_HOLDER
 
 def chat_ids() -> list:
     CHAT_IDs_env = os.getenv('CHAT_IDs')
@@ -38,7 +38,6 @@ async def send_sigle_msg(session: ClientSession, message: str) -> None:
     
     CHAT_IDs = chat_ids()
     TOKEN = token()
-    session = requests.Session()
     # for difference in differences:
     telegram_url = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
     senders = []
@@ -50,7 +49,7 @@ async def send_sigle_msg(session: ClientSession, message: str) -> None:
                                         'chat_id': CHAT_ID,
                                         'parse_mode': 'HTML'
                                 }))
-        senders.insert(0, task)
+        senders.append(task)
     await asyncio.gather(*senders, return_exceptions=True)
 async def send_msg_list(session: ClientSession, new_activity: list) -> None:
 
@@ -58,7 +57,6 @@ async def send_msg_list(session: ClientSession, new_activity: list) -> None:
     # Prepare
     CHAT_IDs = chat_ids()
     TOKEN = token()
-    session = requests.Session()
     # for difference in differences:
     telegram_url = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
     senders = []
@@ -75,8 +73,7 @@ async def send_msg_list(session: ClientSession, new_activity: list) -> None:
                 )
             )
             )
-            # print(f'----Telegram , CHAT-ID: {CHAT_ID}: {response.status_code}----')
-    if len(senders) > 15:
+    if len(senders) > 9:
         msg = f' با توجه به بالا بودن تعداد پیام های جدید و گروه های فعال(مجموعا {len(senders)} پیام در {len(CHAT_IDs)} گروه)، ممکن است Telegram صرفا بخشی از پیام ها را ارسال کند.'
         alerts = []
         for CHAT_ID in CHAT_IDs:
@@ -88,16 +85,16 @@ async def send_msg_list(session: ClientSession, new_activity: list) -> None:
                                             'parse_mode': 'HTML'
                                     }))
             alerts.append(task)
-        await asyncio.gather(*alerts, return_exceptions=True)
-    await asyncio.gather(*senders, return_exceptions=True)
+        alert_response = await asyncio.gather(*alerts, return_exceptions=False)
+    await asyncio.gather(*senders, return_exceptions=False)
 
 def prettify_msg(difference):
-    user = f'\N{BUST IN SILHOUETTE}کاربر: {difference["user"]}\n\n' if difference['user'] != 'LmsLogNone' else ''
-    message = f'\N{pencil}پیام: {difference["message"]}\n\n' if difference['message'] != 'LmsLogNone' else ''
-    attachment_url = f"{difference['attachment_url']}" if difference['attachment_url'] != 'LmsLogNone' else ''
-    attachment_text_prefix = f'\N{magnet}پیوست:'
-    attachment_text = f"{difference['attachment_text']}\n\n" if difference['attachment_text'] != 'LmsLogNone' else ''
+    user = f'\N{BUST IN SILHOUETTE}کاربر: {difference["user"]}\n\n' if difference['user'] != EMPTY_PLACE_HOLDER else ''
+    message = f'\N{pencil}پیام: {difference["message"]}\n\n' if difference['message'] != EMPTY_PLACE_HOLDER else ''
+    attachment_url = f"{difference['attachment_url']}" if difference['attachment_url'] != EMPTY_PLACE_HOLDER else ''
+    attachment_text_prefix = f'\N{magnet}پیوست:' if difference['attachment_text'] != EMPTY_PLACE_HOLDER else ''
+    attachment_text = f"{difference['attachment_text']}\n\n" if difference['attachment_text'] != EMPTY_PLACE_HOLDER else ''
     half_space = '‌'
-    date = f'\N{clock face two oclock}تاریخ: {difference["date"]}\n{half_space}' if difference['date'] != 'LmsLogNone' else ''
+    date = f'\N{clock face two oclock}تاریخ: {difference["date"]}\n{half_space}' if difference['date'] != EMPTY_PLACE_HOLDER else ''
     return f'{user}{message}{attachment_text_prefix} <a href="{attachment_url}">{attachment_text}</a>{date}'
 

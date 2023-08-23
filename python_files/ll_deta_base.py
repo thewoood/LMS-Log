@@ -32,6 +32,7 @@ async def fetch(query: dict) -> list:
 
 async def detabase_is_empty() -> bool:
     response = await db.fetch(limit=1)
+    print(f'response: {response}. Items: {response.items}, Con: {len(response.items)<1}')
     return len(response.items) < 1
 
 async def dict_exists_in_base(query: dict) -> dict:
