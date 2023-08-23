@@ -3,8 +3,8 @@ import uvicorn
 import asyncio
 import aiohttp
 from fastapi import FastAPI
-# from env import Set_Environ
-# Set_Environ()
+# from env impo
+
 from python_files import ll_cookies, ll_deta_base, ll_telegram, ll_lms_crawl
 
 async def main():
