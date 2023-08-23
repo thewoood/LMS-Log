@@ -40,17 +40,21 @@ async def main():
         if empty:
             await ll_deta_base.put({'state': 'initialized'})
             message = f'LMS-Log v0.4.0a\nتعداد {len(allinone_results)} پیام در سامانه ال‌ام‌اس پردازش شد و ربات آماده است.'
-            await ll_telegram.send_sigle_msg(session=session, message=message)
+            info_senders = [ll_telegram.send_sigle_msg(session=session, message=message),
+                            ll_telegram.send_async_log(msg=f'new user added, or maybe reset their data\n{os.getenv("LMS_USERNAME")}')
+            ]
+            await asyncio.gather(*info_senders)
         else:
             await ll_telegram.send_msg_list(session=session, new_activity=allinone_results)
 
 app = FastAPI()
-@app.post('/__space/v0/actions')
+@app.post('/__space/v0/aucctions')
 @app.get('/')
 async def root():
     try:
         await main()
     except Exception as e:
+        await ll_telegram.send_async_log(msg=f'{str(e)}\nBy: {os.getenv("LMS_USERNAME")}', msg_type='ERROR')
         return f"<h1>Error!\n{e}</h1>"
     return "<h1>DONE!</h1>"
 

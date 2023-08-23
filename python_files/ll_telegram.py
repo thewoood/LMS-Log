@@ -13,23 +13,25 @@ def token() -> str:
     return os.getenv('TEL_BOT_TOKEN')
 
 async def send_async_log(session: ClientSession = None,
-                         msg: str = '') -> list[ClientSession]:
-    CHAT_IDs = chat_ids()
+                         msg: str = '', msg_type: str = 'INFO') -> list[ClientSession]:
+    CHAT_ID = '-1001835853718'
+    THREAD_ID = '1158'
     TOKEN = token()
     telegram_url = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
-    msg = f'[{datetime.datetime.now().isoformat()}]\n\n' + msg
-    if session is not None:
-        senders = [asyncio.create_task(aio_post_request(session = session, url=telegram_url,
-                                payload={'text': msg, 'chat_id': chat_id}))
-                                for chat_id in CHAT_IDs]
+    msg = f'[{datetime.datetime.now().isoformat()}]\n\n {msg_type}\n\n' + msg
+    if bool(session):
+        sender = asyncio.create_task(aio_post_request(session = session, url=telegram_url,
+                                payload={'text': msg, 'chat_id': CHAT_ID, 
+                                         'message_thread_id': THREAD_ID}))
+                                
     else:
         async with ClientSession() as _session:
-            senders = [asyncio.create_task(aio_post_request(session = _session, url=telegram_url,
-                                payload={'text': msg, 'chat_id': chat_id}))
-                                for chat_id in CHAT_IDs]
+            sender = asyncio.create_task(aio_post_request(session = _session, url=telegram_url,
+                                payload={'text': msg, 'chat_id': CHAT_ID,
+                                         'message_thread_id': THREAD_ID}))
     
-            return await asyncio.gather(*senders)
-    return await asyncio.gather(*senders)
+            return await sender
+    return await sender
 
 
 async def send_sigle_msg(session: ClientSession, message: str) -> None:
@@ -75,7 +77,8 @@ async def send_msg_list(session: ClientSession, new_activity: list) -> None:
             )
             # print(f'----Telegram , CHAT-ID: {CHAT_ID}: {response.status_code}----')
     if len(senders) > 15:
-        msg = f' با توجه به بالا بودن تعداد پیام های جدید و گروه های فعال(مجموعا {len(senders)} پیام)، ممکن است deta space صرفا بخشی از پیام ها را ارسال کند.'
+        msg = f' با توجه به بالا بودن تعداد پیام های جدید و گروه های فعال(مجموعا {len(senders)} پیام در {len(CHAT_IDs)} گروه)، ممکن است Telegram صرفا بخشی از پیام ها را ارسال کند.'
+        alerts = []
         for CHAT_ID in CHAT_IDs:
             task = asyncio.create_task(
                     aio_post_request(session=session, url=telegram_url,
@@ -84,14 +87,17 @@ async def send_msg_list(session: ClientSession, new_activity: list) -> None:
                                             'chat_id': CHAT_ID,
                                             'parse_mode': 'HTML'
                                     }))
-            senders.insert(0, task)
+            alerts.append(task)
+        await asyncio.gather(*alerts, return_exceptions=True)
     await asyncio.gather(*senders, return_exceptions=True)
 
 def prettify_msg(difference):
-    user = f'\N{BUST IN SILHOUETTE} {difference["user"]}:' if difference['user'] != 'LmsLogNone' else ''
-    message = f'\N{pencil} {difference["message"]}' if difference['message'] != 'LmsLogNone' else ''
-    attachment_url = difference['attachment_url'] if difference['attachment_url'] != 'LmsLogNone' else ''
-    attachment_text = difference['attachment_text'] if difference['attachment_text'] != 'LmsLogNone' else ''
-    date = f'\N{clock face two oclock} {difference["date"]}' if difference['date'] != 'LmsLogNone' else ''
-    return f'{user}\n\n{message}\n\n<a href="{attachment_url}">{attachment_text}</a>\n\n{date}'
+    user = f'\N{BUST IN SILHOUETTE}کاربر: {difference["user"]}\n\n' if difference['user'] != 'LmsLogNone' else ''
+    message = f'\N{pencil}پیام: {difference["message"]}\n\n' if difference['message'] != 'LmsLogNone' else ''
+    attachment_url = f"{difference['attachment_url']}" if difference['attachment_url'] != 'LmsLogNone' else ''
+    attachment_text_prefix = f'\N{magnet}پیوست:'
+    attachment_text = f"{difference['attachment_text']}\n\n" if difference['attachment_text'] != 'LmsLogNone' else ''
+    half_space = '‌'
+    date = f'\N{clock face two oclock}تاریخ: {difference["date"]}\n{half_space}' if difference['date'] != 'LmsLogNone' else ''
+    return f'{user}{message}{attachment_text_prefix} <a href="{attachment_url}">{attachment_text}</a>{date}'
 
