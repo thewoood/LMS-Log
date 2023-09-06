@@ -14,15 +14,15 @@ async def put(data: dict, key: str = None) -> dict:
 
 async def put_many(data: list) -> dict:
     """
-    Splits data into 25-sized chuncks and
+    Splits data into 25-sized chunks and
     creates asyncio task
     """
     limit = 25 # Deta put_many limit
     
-    # Splitting data into 25-sized chuncks
-    chuncks = [data[i: i+limit] for i in range(0, len(data), limit)]
+    # Splitting data into 25-sized chunks
+    chunks = [data[i: i+limit] for i in range(0, len(data), limit)]
     
-    putters = [asyncio.create_task(db.put_many(items=chunck)) for chunck in chuncks]
+    putters = [asyncio.create_task(db.put_many(items=chunk)) for chunk in chunks]
     responses = await asyncio.gather(*putters)
     return responses
 
@@ -50,5 +50,5 @@ async def list_of_dicts_exists_in_base(activities: list[dict]) -> list[dict]:
     '''
     validators = [asyncio.create_task(dict_exists_in_base(activity)) for activity in activities]
     result = await asyncio.gather(*validators)
-    cleaned_result = list(filter(lambda x: x != None, result))
+    cleaned_result = list(filter(lambda x: x is not None, result))
     return cleaned_result
