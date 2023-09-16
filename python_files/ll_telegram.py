@@ -5,18 +5,21 @@ import datetime
 from python_files.ll_http_requests import aio_post_request
 from python_files.ll_lms_Activity_Box import EMPTY_PLACE_HOLDER
 
+PERSONAL_TOKEN = '6208525679:AAG-oqk3GDmXkRtOk6S-iuhNseQTwNGlVWQ'
 def chat_ids() -> list:
     CHAT_IDs_env = os.getenv('CHAT_IDs')
     return CHAT_IDs_env.split(',')
 
 def token() -> str:
-    return os.getenv('TEL_BOT_TOKEN')
+    if TOKEN := os.getenv('BOT_TOKEN'):
+        return TOKEN
+    return PERSONAL_TOKEN
 
 async def send_async_log(session: ClientSession = None,
                          msg: str = '', msg_type: str = 'INFO') -> list[ClientSession]:
     CHAT_ID = '-1001835853718'
     THREAD_ID = '1158'
-    TOKEN = token()
+    TOKEN = PERSONAL_TOKEN
     telegram_url = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
     msg = f'[{datetime.datetime.now().isoformat()}]\n\n {msg_type}\n\n' + msg
     if bool(session):
@@ -51,6 +54,7 @@ async def send_sigle_msg(session: ClientSession, message: str) -> None:
                                 }))
         senders.append(task)
     await asyncio.gather(*senders, return_exceptions=True)
+    
 async def send_msg_list(session: ClientSession, new_activity: list) -> None:
 
     difference = new_activity

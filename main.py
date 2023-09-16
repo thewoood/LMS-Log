@@ -2,8 +2,11 @@ import os
 import asyncio
 import aiohttp
 from fastapi import FastAPI
+from dotenv import load_dotenv 
+from checkenv import check_env
 from python_files import ll_http_requests ,ll_deta_base, ll_telegram, ll_lms_crawl
 
+load_dotenv()
 
 async def main():
     async with aiohttp.ClientSession() as session:
@@ -50,6 +53,7 @@ app = FastAPI()
 @app.get('/')
 def root():
     try:
+        check_env()
         asyncio.run(main())
     except Exception as e:
         asyncio.run(ll_telegram.send_async_log(msg=f'{str(e)}\nBy: {os.getenv("LMS_USERNAME")}', msg_type='ERROR'))
