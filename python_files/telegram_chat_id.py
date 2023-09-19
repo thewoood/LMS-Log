@@ -11,7 +11,7 @@ bot = AsyncTeleBot(TOKEN, parse_mode='MARKDOWN')
 
 @bot.message_handler(commands=['start'])
 async def start(message: telebot.types.Message):
-    text = f'Type /id to get current chat ID`'
+    text = 'Type /id to get current chat ID`'
     await bot.reply_to(message, text)
 
 @bot.message_handler(commands=['id'])

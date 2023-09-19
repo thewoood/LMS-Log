@@ -16,13 +16,17 @@ async def aio_post_request(session: aiohttp.ClientSession, url: str,
         return response
 
 
-async def login_async(session: aiohttp.ClientSession, 
-                            lms_username: str, lms_password: str, 
-                            login_url: str) -> dict:
+async def login_async(
+        session: aiohttp.ClientSession, 
+        lms_username: str,
+        lms_password: str, 
+        login_url: str
+) -> dict:
     payload = {
         'username': lms_username,
         'password': lms_password
     }
-    async with session.post(url=login_url, data=payload,
-                            headers={'referer': login_url}) as response:
-        pass
+    async with session.post(
+        url=login_url, data=payload, headers={'referrer': login_url}
+    ) as _:
+        pass        

@@ -22,7 +22,7 @@ async def fetch_activity(session: ClientSession, group_url: str,
     for msg_box in msg_boxes:
         html = msg_box.prettify()
         sub_soup = BeautifulSoup(html, 'html.parser')
-        class_msg_box = Msg_Box(sub_soup=sub_soup, css_selectors=css_selectors, group=group_name)
+        class_msg_box = Msg_Box(sub_soup=sub_soup, css_selectors=css_selectors,group=group_name)  # noqa: E501
         activities.append(class_msg_box.setup_msg())
     
     print(f'{group_name}: {len(activities)} MESSAGES - LMS')

@@ -4,10 +4,10 @@ import asyncio
 deta = None
 db = None
 
-def initialize_db() -> None:
+def initialize_db(db_name: str) -> None:
     global deta, db
     deta = Deta()
-    db = deta.AsyncBase('lms')
+    db = deta.AsyncBase(db_name)
 
 async def put(data: dict, key: str = None) -> dict:
     await db.put(data=data, key=key)
@@ -30,9 +30,9 @@ async def fetch(query: dict) -> list:
     response = await db.fetch(query=query)
     return response.items 
 
-async def detabase_is_empty() -> bool:
+async def database_is_empty() -> bool:
     response = await db.fetch(limit=1)
-    print(f'response: {response}. Items: {response.items}, Con: {len(response.items)<1}')
+    print(f'{response = }\n{response.items = }\n{len(response.items)<1 = }')
     return len(response.items) < 1
 
 async def dict_exists_in_base(query: dict) -> dict:
@@ -48,7 +48,9 @@ async def list_of_dicts_exists_in_base(activities: list[dict]) -> list[dict]:
     based on the implementation of dict_exists_in_base,
     result will only hold new data. old data will become None.
     '''
-    validators = [asyncio.create_task(dict_exists_in_base(activity)) for activity in activities]
+    validators = [
+        asyncio.create_task(dict_exists_in_base(activity)) for activity in activities
+    ]
     result = await asyncio.gather(*validators)
     cleaned_result = list(filter(lambda x: x is not None, result))
     return cleaned_result

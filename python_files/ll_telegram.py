@@ -37,7 +37,7 @@ async def send_async_log(session: ClientSession = None,
     return await sender
 
 
-async def send_sigle_msg(session: ClientSession, message: str) -> None:
+async def send_single_msg(session: ClientSession, message: str) -> None:
     
     CHAT_IDs = chat_ids()
     TOKEN = token()

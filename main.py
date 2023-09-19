@@ -26,7 +26,7 @@ async def main():
         GROUP_URLs = await ll_lms_crawl.group_urls_async(session=session,
                             lms_homepage_url='http://lms.ui.ac.ir/members/home',)
 
-        ll_deta_base.initialize_db()
+        ll_deta_base.initialize_db('lms')
 
         # Fetch Each Group new activity
         tasks = [asyncio.create_task(ll_lms_crawl.process_activity(
@@ -36,17 +36,20 @@ async def main():
 
         allinone_results = [activity for group_activity in results for activity in group_activity]
 
-        empty = await ll_deta_base.detabase_is_empty() 
+        empty = await ll_deta_base.database_is_empty() 
         await ll_deta_base.put_many(allinone_results)
         if empty:
             await ll_deta_base.put({'state': 'initialized'})
-            message = f'LMS-Log v0.4.0a\nتعداد {len(allinone_results)} پیام در سامانه ال‌ام‌اس پردازش شد و ربات آماده است.'
-            info_senders = [ll_telegram.send_sigle_msg(session=session, message=message),
-                            ll_telegram.send_async_log(msg=f'new user added, or maybe reset their data\n{os.getenv("LMS_USERNAME")}')
+            message = f'LMS-Log v0.4.0a\nتعداد {len(allinone_results)} پیام در سامانه ال‌ام‌اس پردازش شد و ربات آماده است.'  # noqa: E501
+            info_senders = [ll_telegram.send_single_msg(session=session, message=message),
+                            ll_telegram.send_async_log(msg=f'new user added, or maybe reset their data\n{os.getenv("LMS_USERNAME")}')  # noqa: E501
             ]
             await asyncio.gather(*info_senders)
         else:
-            await ll_telegram.send_msg_list(session=session, new_activity=allinone_results)
+            await ll_telegram.send_msg_list(
+                session=session,
+                new_activity=allinone_results
+            )
 
 app = FastAPI()
 @app.post('/__space/v0/actions')
