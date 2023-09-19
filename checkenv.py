@@ -15,7 +15,7 @@ def check_env():
     for env in ENVs:
         value = os.getenv(env)
         if not value:
-            raise EnvNotSet(f'{env} is NOT set.')
+            raise EnvNotSet(f'Please set {env} via SETTINGS -> CONFIGURATION in Deta.')
         
 if __name__ == '__main__':
     check_env()
