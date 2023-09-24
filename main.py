@@ -34,13 +34,17 @@ async def main():
         )) for group_url in GROUP_URLs]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        allinone_results = [activity for group_activity in results for activity in group_activity]
+        anything_new = any(results)
+        if not anything_new:
+            return None
+        await ll_telegram.send_async_log(msg=str(results), msg_type='ERROR')
+        all_in_one_results = [activity for group_activity in results for activity in group_activity]
 
         empty = await ll_deta_base.database_is_empty() 
-        await ll_deta_base.put_many(allinone_results)
+        await ll_deta_base.put_many(all_in_one_results)
         if empty:
             await ll_deta_base.put({'state': 'initialized'})
-            message = f'LMS-Log v0.4.0a\nتعداد {len(allinone_results)} پیام در سامانه ال‌ام‌اس پردازش شد و ربات آماده است.'  # noqa: E501
+            message = f'LMS-Log v0.4.0a\nتعداد {len(all_in_one_results)} پیام در سامانه ال‌ام‌اس پردازش شد و ربات آماده است.'  # noqa: E501
             info_senders = [ll_telegram.send_single_msg(session=session, message=message),
                             ll_telegram.send_async_log(msg=f'new user added, or maybe reset their data\n{os.getenv("LMS_USERNAME")}')  # noqa: E501
             ]
@@ -48,7 +52,7 @@ async def main():
         else:
             await ll_telegram.send_msg_list(
                 session=session,
-                new_activity=allinone_results
+                new_activity=all_in_one_results
             )
 
 app = FastAPI()

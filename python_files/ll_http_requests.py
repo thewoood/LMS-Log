@@ -5,7 +5,10 @@ async def aio_get_request(session: aiohttp.ClientSession, url: str,
                           text:bool=False):
     async with session.get(url) as response:
         if text:
-            return await response.text()
+            try:
+                return await response.text()
+            except aiohttp.ClientPayloadError as _:
+                return ''
         return response
 
 async def aio_post_request(session: aiohttp.ClientSession, url: str, 

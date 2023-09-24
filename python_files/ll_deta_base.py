@@ -32,7 +32,6 @@ async def fetch(query: dict) -> list:
 
 async def database_is_empty() -> bool:
     response = await db.fetch(limit=1)
-    print(f'{response = }\n{response.items = }\n{len(response.items)<1 = }')
     return len(response.items) < 1
 
 async def dict_exists_in_base(query: dict) -> dict:
