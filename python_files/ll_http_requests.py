@@ -6,7 +6,7 @@ async def aio_get_request(session: aiohttp.ClientSession, url: str,
     async with session.get(url) as response:
         if text:
             try:
-                return await response.text()
+                return await response.text(encoding='utf-8', errors='replace')
             except aiohttp.ClientPayloadError as _:
                 return ''
         return response

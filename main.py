@@ -37,10 +37,10 @@ async def main():
         anything_new = any(results)
         if not anything_new:
             return None
-        await ll_telegram.send_async_log(msg=str(results), msg_type='ERROR')
+
         all_in_one_results = [activity for group_activity in results for activity in group_activity]
 
-        empty = await ll_deta_base.database_is_empty() 
+        empty = await ll_deta_base.database_is_empty()
         await ll_deta_base.put_many(all_in_one_results)
         if empty:
             await ll_deta_base.put({'state': 'initialized'})
