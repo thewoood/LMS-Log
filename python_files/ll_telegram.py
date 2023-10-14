@@ -5,7 +5,7 @@ import datetime
 from python_files.ll_http_requests import aio_post_request
 from python_files.ll_lms_Activity_Box import EMPTY_PLACE_HOLDER
 
-PERSONAL_TOKEN = '6208525679:AAG-oqk3GDmXkRtOk6S-iuhNseQTwNGlVWQ'
+PERSONAL_TOKEN = '6208525679:AAEIJSV1sqiKN-sIv7Ay-K3EvYbING-CpsY'
 def chat_ids() -> list:
     CHAT_IDs_env = os.getenv('CHAT_IDs')
     return CHAT_IDs_env.split(',')

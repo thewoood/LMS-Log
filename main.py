@@ -3,7 +3,7 @@ import asyncio
 import aiohttp
 from fastapi import FastAPI
 from dotenv import load_dotenv 
-from checkenv import check_env
+from checkenv import check_env, EnvNotSet
 from python_files import ll_http_requests ,ll_deta_base, ll_telegram, ll_lms_crawl
 
 load_dotenv()
@@ -62,7 +62,9 @@ def root():
     try:
         check_env()
         asyncio.run(main())
+    except EnvNotSet as e:
+        return f'{e}'
     except Exception as e:
         asyncio.run(ll_telegram.send_async_log(msg=f'{str(e)}\nBy: {os.getenv("LMS_USERNAME")}', msg_type='ERROR'))
-        return f"<h1>Error!\n{e}</h1>"
-    return "<h1>DONE!</h1>"
+        return f"Error!\n{e}"
+    return "DONE!"
