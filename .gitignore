@@ -1,11 +1,22 @@
 __pycache__
 Dockerfile
 .venv
+<<<<<<< HEAD
 page.html
 test.py
 liara-cloudflare-telegram
 test-liara-git-repl.py
 test.json
+=======
+>>>>>>> feature
 env.py
-.liaraignore
 .vscode
+.space
+.spaceignore
+Spacefile
+__pycache__
+tests
+diary.md
+Discovery.md
+oldrequirements.txt
+*.env
