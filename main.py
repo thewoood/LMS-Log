@@ -17,11 +17,12 @@ async def main():
                                         login_url='http://lms.ui.ac.ir/login')
         
         
-        css_selectors = {'user': '.feed_item_username',
-                     'message': '.feed_item_bodytext',
-                     'attachment': '.feed_item_attachments',
-                     'date': '.timestamp',
-                    }
+        css_selectors = {
+            'user': '.feed_item_username',
+            'message': '.feed_item_bodytext',
+            'attachment': '.feed_item_attachments',
+            'date': '.timestamp',
+        }
 
         GROUP_URLs = await ll_lms_crawl.group_urls_async(session=session,
                             lms_homepage_url='http://lms.ui.ac.ir/members/home',)
