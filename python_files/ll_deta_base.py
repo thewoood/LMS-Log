@@ -6,7 +6,7 @@ db = None
 
 def initialize_db(db_name: str) -> None:
     global deta, db
-    deta = Deta()
+    deta = Deta('d0MqwXFB3S9E_hv69fFBpwxG6k25SmF3iQVwkaFAvbF9d')
     db = deta.AsyncBase(db_name)
 
 async def put(data: dict, key: str = None) -> dict:

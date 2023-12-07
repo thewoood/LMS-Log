@@ -1,0 +1,43 @@
+# Spacefile Docs: https://go.deta.dev/docs/spacefile/v0
+v: 0
+micros:
+  - name: PublicQolam
+    src: ./
+    engine: python3.9
+    primary: true
+    path: publicqolam
+    run: uvicorn PublicQolam.main:app
+    dev: uvicorn PublicQolam.main:app --host 127.0.0.1 --port 4201 --reload 
+    presets:
+      env:
+        - name: LMS_USERNAME
+          description: Your LMS Username
+          default: ""
+        - name: LMS_PASSWORD
+          description: Your LMS Password
+
+    actions:
+      - id: "fetch"
+        name: "fetch"
+        description: "Checks for new public messages"
+        trigger: "schedule"
+        default_interval: "0/5 * * * *"
+
+  - name: Saba
+    src: ./
+    engine: python3.9
+    path: saba
+    run: uvicorn main:app
+    dev: uvicorn main:app --host 127.0.0.1 --port 4201 --reload 
+    presets:
+      env:
+        - name: CHAT_IDs
+          description: Telegram Chat IDs, separated by commas e.g. -12345, -54321
+          default: ""
+
+    actions:
+      - id: "send"
+        name: "send"
+        description: "Send to Telegram, Clear new_db, Add to main_db"
+        trigger: "schedule"
+        default_interval: "0/5 * * * *"

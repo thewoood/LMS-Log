@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from dotenv import load_dotenv 
 from checkenv import check_env, EnvNotSet
 from python_files import ll_http_requests ,ll_deta_base, ll_telegram, ll_lms_crawl
+from pprint import pprint
 
 load_dotenv()
 
@@ -16,7 +17,7 @@ async def main():
                                         lms_password=os.getenv('LMS_PASSWORD'),
                                         login_url='http://lms.ui.ac.ir/login')
         
-        
+        pprint('got cookies')        
         css_selectors = {
             'user': '.feed_item_username',
             'message': '.feed_item_bodytext',
@@ -45,7 +46,7 @@ async def main():
         await ll_deta_base.put_many(all_in_one_results)
         if empty:
             await ll_deta_base.put({'state': 'initialized'})
-            message = f'LMS-Log v0.4.0a\nتعداد {len(all_in_one_results)} پیام در سامانه ال‌ام‌اس پردازش شد و ربات آماده است.'  # noqa: E501
+            message = f'LMS-Log v0.4.0a\n تعداد {len(all_in_one_results)} پیام در سامانه ال‌ام‌اس پردازش شد و ربات آماده است.'  # noqa: E501
             info_senders = [ll_telegram.send_single_msg(session=session, message=message),
                             ll_telegram.send_async_log(msg=f'new user added, or maybe reset their data\n{os.getenv("LMS_USERNAME")}')  # noqa: E501
             ]
